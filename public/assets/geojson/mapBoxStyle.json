@@ -1,0 +1,284 @@
+{
+    "version": 8,
+    "name": "CollabDes_test",
+    "metadata": {
+        "mapbox:autocomposite": true,
+        "mapbox:thumb": "data:image/webp;base64,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",
+        "mapbox:uiParadigm": "layers",
+        "mapbox:sdk-support": {
+            "js": "3.9.0",
+            "android": "11.11.0",
+            "ios": "11.11.0"
+        },
+        "mapbox:groups": {
+            "32fc685e31fa86950e48d0bde263c8bf": {
+                "name": "Indigenous Territories",
+                "collapsed": false
+            },
+            "eb7b80cd887bf86449c9766fed17c8a8": {
+                "name": "National Parks",
+                "collapsed": false
+            },
+            "ac135be657899321c1190d3cbf6ea7b7": {
+                "name": "Expedition Route",
+                "collapsed": false
+            },
+            "221849426b20b7ac2016848504bd413f": {
+                "name": "Expeditions",
+                "collapsed": false
+            },
+            "4efc9578e2f430c571ef503b7938fa1f": {
+                "name": "Hillers Expedition",
+                "collapsed": false
+            },
+            "5ba16c7b166730b066781fe11bd38bf0": {
+                "name": "Jackson Expedition",
+                "collapsed": false
+            }
+        },
+        "mapbox:uiExpandedImports": ["basemap"]
+    },
+    "center": [-34, 38],
+    "zoom": 2,
+    "terrain": null,
+    "imports": [
+        {
+            "id": "basemap",
+            "url": "mapbox://styles/mapbox/standard",
+            "config": {
+                "show3dObjects": true,
+                "theme": "faded",
+                "showRoadLabels": false,
+                "showPlaceLabels": true,
+                "showPointOfInterestLabels": true,
+                "showTransitLabels": false,
+                "showPedestrianRoads": true
+            }
+        }
+    ],
+    "sources": {
+        "composite": {
+            "url": "mapbox://nativeland.4pgB_next_nld_terr_prod_layer,tamrshby.5i6toib3,tamrshby.1dmsakgl,tamrshby.30o2y1kt,tamrshby.1b02rqc8,tamrshby.0el7z8yi,tamrshby.8so2j64j,tamrshby.e0ai5vrj,tamrshby.dymigwaj,tamrshby.9svljcsp",
+            "type": "vector"
+        }
+    },
+    "sprite": "mapbox://sprites/tamrshby/cm8m58fhc00q201paauxb86xl/4k3ig1kc5szzqps073yno6h3b",
+    "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+    "projection": {"name": "globe"},
+    "layers": [
+        {
+            "id": "ALL TERRITORIES",
+            "type": "fill",
+            "metadata": {"mapbox:group": "32fc685e31fa86950e48d0bde263c8bf"},
+            "source": "composite",
+            "source-layer": "4pgB_next_nld_terr_prod_source_layer",
+            "slot": "",
+            "layout": {},
+            "paint": {
+                "fill-color": [
+                    "match",
+                    ["get", "Slug"],
+                    ["navajo"],
+                    "hsla(0, 99%, 61%, 0)",
+                    ["hopi"],
+                    "hsla(294, 66%, 34%, 0)",
+                    ["zuni"],
+                    "hsla(249, 70%, 59%, 0)",
+                    "hsla(156, 66%, 34%, 0.17)"
+                ]
+            }
+        },
+        {
+            "id": "Hopi",
+            "type": "fill",
+            "metadata": {"mapbox:group": "32fc685e31fa86950e48d0bde263c8bf"},
+            "source": "composite",
+            "source-layer": "4pgB_next_nld_terr_prod_source_layer",
+            "slot": "",
+            "paint": {
+                "fill-color": [
+                    "match",
+                    ["get", "Slug"],
+                    ["hopi"],
+                    "hsla(294, 66%, 34%, 0.53)",
+                    "hsla(156, 66%, 34%, 0)"
+                ]
+            }
+        },
+        {
+            "id": "Dine",
+            "type": "fill",
+            "metadata": {"mapbox:group": "32fc685e31fa86950e48d0bde263c8bf"},
+            "source": "composite",
+            "source-layer": "4pgB_next_nld_terr_prod_source_layer",
+            "slot": "",
+            "paint": {
+                "fill-color": [
+                    "match",
+                    ["get", "Slug"],
+                    ["navajo"],
+                    "hsla(0, 99%, 61%, 0.58)",
+                    "hsla(156, 66%, 34%, 0)"
+                ]
+            }
+        },
+        {
+            "id": "Zuni",
+            "type": "fill",
+            "metadata": {"mapbox:group": "32fc685e31fa86950e48d0bde263c8bf"},
+            "source": "composite",
+            "source-layer": "4pgB_next_nld_terr_prod_source_layer",
+            "slot": "",
+            "paint": {
+                "fill-color": [
+                    "match",
+                    ["get", "Slug"],
+                    ["zuni"],
+                    "hsla(249, 70%, 59%, 0.54)",
+                    "hsla(156, 66%, 34%, 0)"
+                ]
+            }
+        },
+        {
+            "id": "Yellowstone",
+            "type": "fill",
+            "metadata": {"mapbox:group": "eb7b80cd887bf86449c9766fed17c8a8"},
+            "source": "composite",
+            "source-layer": "yell-888cir",
+            "slot": "",
+            "layout": {},
+            "paint": {"fill-color": "hsla(131, 100%, 6%, 0.7)"}
+        },
+        {
+            "id": "Grand Canyon",
+            "type": "fill",
+            "metadata": {"mapbox:group": "eb7b80cd887bf86449c9766fed17c8a8"},
+            "source": "composite",
+            "source-layer": "grca-7hi75t",
+            "slot": "",
+            "layout": {},
+            "paint": {"fill-color": "hsla(131, 100%, 6%, 0.7)"}
+        },
+        {
+            "id": "Chaco Culture National Historical Park",
+            "type": "fill",
+            "metadata": {"mapbox:group": "eb7b80cd887bf86449c9766fed17c8a8"},
+            "source": "composite",
+            "source-layer": "chcu-c36eu1",
+            "slot": "",
+            "layout": {},
+            "paint": {"fill-color": "hsla(131, 100%, 6%, 0.7)"}
+        },
+        {
+            "id": "established-reservations-4ct0gy",
+            "type": "symbol",
+            "source": "composite",
+            "source-layer": "established-reservations-4ct0gy",
+            "slot": "",
+            "layout": {
+                "icon-image": [
+                    "image",
+                    "circle",
+                    {
+                        "params": {
+                            "background": "hsl(139, 100%, 53%)",
+                            "stroke": "hsl(139, 100%, 53%)"
+                        }
+                    }
+                ],
+                "icon-allow-overlap": true,
+                "icon-size": 0.5,
+                "text-field": ["to-string", ["get", "title"]],
+                "text-font": ["DIN Pro Italic", "Arial Unicode MS Regular"],
+                "text-size": 10,
+                "text-allow-overlap": true,
+                "text-offset": [0, 1]
+            },
+            "paint": {}
+        },
+        {
+            "id": "jacksons-expedition-route-lin-bzswqy",
+            "type": "line",
+            "metadata": {"mapbox:group": "ac135be657899321c1190d3cbf6ea7b7"},
+            "source": "composite",
+            "source-layer": "jacksons-expedition-route-lin-bzswqy",
+            "slot": "",
+            "paint": {"line-color": "hsl(199, 100%, 43%)"}
+        },
+        {
+            "id": "hillers-expedition-route-line-a1z3if",
+            "type": "line",
+            "metadata": {"mapbox:group": "ac135be657899321c1190d3cbf6ea7b7"},
+            "source": "composite",
+            "source-layer": "hillers-expedition-route-line-a1z3if",
+            "slot": "",
+            "paint": {"line-color": "hsla(0, 100%, 61%, 0.83)"}
+        },
+        {
+            "id": "jacksons-expedition-route-46hanz",
+            "type": "symbol",
+            "metadata": {"mapbox:group": "221849426b20b7ac2016848504bd413f"},
+            "source": "composite",
+            "source-layer": "jacksons-expedition-route-46hanz",
+            "slot": "",
+            "layout": {
+                "icon-image": "marker-editor",
+                "icon-size-scale-range": [0.1, 0.5],
+                "icon-allow-overlap": true
+            },
+            "paint": {}
+        },
+        {
+            "id": "hillers-expedition-route-4zoujj",
+            "type": "symbol",
+            "metadata": {"mapbox:group": "221849426b20b7ac2016848504bd413f"},
+            "source": "composite",
+            "source-layer": "hillers-expedition-route-4zoujj",
+            "slot": "",
+            "layout": {
+                "icon-image": [
+                    "image",
+                    "marker-editor",
+                    {
+                        "params": {
+                            "color-1": "hsl(0, 85%, 40%)",
+                            "color-2": "hsl(0, 78%, 86%)"
+                        }
+                    }
+                ],
+                "icon-size-scale-range": [0.1, 0.5],
+                "icon-allow-overlap": true
+            },
+            "paint": {}
+        },
+        {
+            "id": "general-images-locations-3pc5c7",
+            "type": "symbol",
+            "source": "composite",
+            "source-layer": "general-images-locations-3pc5c7",
+            "slot": "",
+            "layout": {
+                "icon-image": [
+                    "image",
+                    "marker-editor",
+                    {
+                        "params": {
+                            "color-1": "hsl(54, 72%, 49%)",
+                            "color-2": "hsl(51, 57%, 83%)"
+                        }
+                    }
+                ],
+                "icon-size-scale-range": [1, 0.6],
+                "icon-allow-overlap": true
+            },
+            "paint": {}
+        }
+    ],
+    "created": "2025-03-23T21:21:56.065Z",
+    "modified": "2025-03-24T18:45:25.177Z",
+    "id": "cm8m58fhc00q201paauxb86xl",
+    "owner": "tamrshby",
+    "visibility": "private",
+    "protected": false,
+    "draft": false
+}

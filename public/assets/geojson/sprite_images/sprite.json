@@ -1,0 +1,163 @@
+{
+  "arrow": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 0,
+    "y": 0
+  },
+  "bicycle": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 24,
+    "y": 0
+  },
+  "building": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 0,
+    "y": 24
+  },
+  "bus": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 24,
+    "y": 24
+  },
+  "cafe": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 48,
+    "y": 0
+  },
+  "car": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 48,
+    "y": 24
+  },
+  "circle": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 0,
+    "y": 48
+  },
+  "circle-stroked": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 24,
+    "y": 48
+  },
+  "cross": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 48,
+    "y": 48
+  },
+  "diamond": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 72,
+    "y": 0
+  },
+  "grocery": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 72,
+    "y": 24
+  },
+  "heart": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 72,
+    "y": 48
+  },
+  "home": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 0,
+    "y": 72
+  },
+  "jewelry-store": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 24,
+    "y": 72
+  },
+  "marker-editor": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 48,
+    "y": 72
+  },
+  "parking": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 72,
+    "y": 72
+  },
+  "restaurant": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 96,
+    "y": 0
+  },
+  "rocket": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 96,
+    "y": 24
+  },
+  "shop": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 96,
+    "y": 48
+  },
+  "square": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 96,
+    "y": 72
+  },
+  "star": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 0,
+    "y": 96
+  },
+  "suitcase": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 24,
+    "y": 96
+  },
+  "triangle": {
+    "height": 24,
+    "pixelRatio": 1,
+    "width": 24,
+    "x": 48,
+    "y": 96
+  }
+}
