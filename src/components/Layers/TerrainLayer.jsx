@@ -2,9 +2,10 @@
 import { TerrainLayer as DeckTerrainLayer } from '@deck.gl/geo-layers';
 import { MAPBOX_TOKEN } from '../../config/mapbox';
 
+
 // Set up base URLs for Mapbox services
-const ELEVATION_URL = `https://api.mapbox.com/v4/mapbox.terrain-rgb/{z}/{x}/{y}.pngraw?access_token=${MAPBOX_TOKEN}`;
-const TEXTURE_URL = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
+const ELEVATION_URL = `https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/terrain.png?access_token=${MAPBOX_TOKEN}`;
+const TEXTURE_URL = `https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/terrain-mask.png?access_token=${MAPBOX_TOKEN}`;
 
 export default function createTerrainLayer() {
   console.log("Creating terrain layer for Navajo Nation");
