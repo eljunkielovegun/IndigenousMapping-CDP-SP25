@@ -1,0 +1,139 @@
+{
+    "locations": [
+      {
+        "id": "mystic-lake",
+        "name": "Mystic Lake, Montana",
+        "photographer": "Jackson",
+        "year": "1871-1878",
+        "catalog_ref": "P.48.1.7",
+        "description": "Mystic Lake, Montana Territory",
+        "coordinates": {
+          "latitude": 45.5453506,
+          "longitude": -110.9193637
+        },
+        "elevation_feet": 6398,
+        "elevation_meters": 1950,
+        "image_url": "public/assets/img/P.48.1.7.jpg"
+      },
+      {
+        "id": "gallatin-headwaters",
+        "name": "Headwaters of the Gallatin Mountains",
+        "photographer": "Jackson",
+        "year": "1871-1878",
+        "catalog_ref": "P.48.1.16",
+        "description": "Headwaters of the Gallatin Mountains",
+        "coordinates": {
+          "latitude": 44.9632,
+          "longitude": -111.0573
+        },
+        "elevation_feet": 8500,
+        "elevation_meters": 2591,
+        "image_url": "public/assets/img/P.48.1.16.jpg"
+      },
+      {
+        "id": "mammoth-hot-springs",
+        "name": "Mammoth Hot Springs",
+        "photographer": "Jackson",
+        "year": "1871-1878",
+        "catalog_ref": "P.48.1.8",
+        "description": "Mammoth Hot-Springs Gardiners River [Wyoming]",
+        "coordinates": {
+          "latitude": 44.9772,
+          "longitude": -110.7028
+        },
+        "elevation_feet": 6200,
+        "elevation_meters": 1889,
+        "image_url": "public/assets/img/P.48.1.8.jpg"
+      },
+      {
+        "id": "yellowstone-falls",
+        "name": "Great Falls of the Yellowstone",
+        "photographer": "Jackson",
+        "year": "1871",
+        "catalog_ref": "P.48.1.9",
+        "description": "Great Falls of the Yellowstone",
+        "coordinates": {
+          "latitude": 44.7181,
+          "longitude": -110.4961
+        },
+        "elevation_feet": 7500,
+          "elevation_meters": 2286,
+        "image_url": "public/assets/img/P.48.1.9.jpg"
+      },
+      {
+        "id": "holy-cross",
+        "name": "Mountain of the Holy-Cross",
+        "photographer": "Jackson",
+        "year": "1873",
+        "catalog_ref": "P.48.1.2",
+        "description": "Mountain of the Holy-Cross",
+        "coordinates": {
+          "latitude": 39.4668,
+          "longitude": -106.4817
+        },
+        "elevation_feet": 14009,
+        "elevation_meters": 4270,
+        "image_url": "public/assets/img/P.48.1.2.jpg"
+      },
+      {
+        "id": "mancos-canyon",
+        "name": "Mancos Canyon",
+        "photographer": "Jackson",
+        "year": "1874-1875",
+        "catalog_ref": "P.48.1.30",
+        "description": "Ancient Ruins in the Canyon of the Mancos",
+        "coordinates": {
+          "latitude": 37.3352,
+          "longitude": -108.4338
+        },
+        "elevation_feet": 6700,
+        "elevation_meters": 2042,
+        "image_url": "public/assets/img/P.48.1.30.jpg"
+      },
+      {
+        "id": "walpi-pueblo-1",
+        "name": "Walpi Pueblo - Terraced Houses",
+        "photographer": "Hillers",
+        "year": "1879",
+        "catalog_ref": "P.48.1.20",
+        "description": "Terraced Houses at Wolpi [Walpi]",
+        "coordinates": {
+          "latitude": 35.8291,
+          "longitude": -110.3885
+        },
+        "elevation_feet": 6225,
+        "elevation_meters": 1897,
+        "image_url": "public/assets/img/P.48.1.20.jpg"
+      },
+      {
+        "id": "walpi-pueblo-2",
+        "name": "Walpi Pueblo - Weaving",
+        "photographer": "Hillers",
+        "year": "1879",
+        "catalog_ref": "P.48.1.22",
+        "description": "A Moki [Hopi] Weaving [Walpi]",
+        "coordinates": {
+          "latitude": 35.8291,
+          "longitude": -110.3885
+        },
+        "elevation_feet": 6225,
+        "elevation_meters": 1897,
+        "image_url": "public/assets/img/P.48.1.22.jpg"
+      },
+      {
+        "id": "montezuma-canyon",
+        "name": "Montezuma Canyon",
+        "photographer": "Jackson",
+        "year": "1874-1876",
+        "catalog_ref": "P.48.1.31",
+        "description": "Ruins in the Montezuma Canyon",
+        "coordinates": {
+          "latitude": 37.3870,
+          "longitude": -109.3062
+        },
+        "elevation_feet": 5800,
+        "elevation_meters": 1768,
+        "image_url": "public/assets/img/P.48.1.31.jpg"
+      }
+    ]
+  }
