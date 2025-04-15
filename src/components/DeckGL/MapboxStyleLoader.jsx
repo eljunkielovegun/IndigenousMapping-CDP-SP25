@@ -164,7 +164,8 @@ camera: {
           }
         }
         
-        console.log("Updated territory visibility");
+       
+         // console.log("Updated territory visibility");
       } catch (error) {
         console.log("Error updating territory visibility:", error.message);
       }
@@ -177,7 +178,7 @@ camera: {
        Math.abs(externalViewState.zoom - (lastLoggedViewState?.zoom || 0)) > 0.1 ||
        Math.abs(externalViewState.pitch - (lastLoggedViewState?.pitch || 0)) > 1 ||
        Math.abs(externalViewState.bearing - (lastLoggedViewState?.bearing || 0)) > 1)) {
-    console.log("MapboxStyleLoader received external viewState:", externalViewState);
+    // console.log("MapboxStyleLoader received external viewState:", externalViewState);
     setLastLoggedViewState(externalViewState);
   }
 
@@ -725,7 +726,7 @@ camera: {
   
   // Log the style when territory visibility changes
   useEffect(() => {
-    console.log("Territory visibility updated:", territoriesVisible);
+    // console.log("Territory visibility updated:", territoriesVisible);
   }, [territoriesVisible]);
   
   // Add a transition progress indicator
@@ -843,7 +844,7 @@ camera: {
           if (Math.abs(viewState.zoom - effectiveViewState.zoom) > 0.5 ||
               Math.abs(viewState.pitch - effectiveViewState.pitch) > 5 ||
               Math.abs(viewState.bearing - effectiveViewState.bearing) > 5) {
-            console.log("DeckGL significant viewState change:", viewState);
+            // console.log("DeckGL significant viewState change:", viewState);
           }
           
           // Create a new viewState object rather than modifying the original

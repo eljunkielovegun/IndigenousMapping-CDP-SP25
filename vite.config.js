@@ -3,7 +3,12 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import glsl from 'vite-plugin-glsl';
 
-export default defineConfig({
+export default defineConfig(({ command }) => {
+  const base = command === 'serve' ? '/' : '/IndigenousMapping-CDP-SP25/';
+
+  return{
+
+
   plugins: [
     react(),
     glsl() // Support for importing .glsl, .vert, .frag files
@@ -66,4 +71,7 @@ export default defineConfig({
       'd3-scale'
     ]
   }
+  }
 });
+
+
