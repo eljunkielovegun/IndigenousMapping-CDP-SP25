@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import DeckGL from '@deck.gl/react';
 import Map from 'react-map-gl';
+import { MapView, OrbitView } from '@deck.gl/core';
 import { useViewState } from '../../hooks/deck/useViewState';
 import { MAPBOX_TOKEN } from '../../config/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -253,12 +254,12 @@ camera: {
         url: "mapbox://mapbox.satellite",
         tileSize: 256
       },
-      // Terrain source
+      // Terrain source - increase maxzoom for better detail on Holy Cross Mountain
       "mapbox-dem": {
         type: "raster-dem",
         url: "mapbox://mapbox.mapbox-terrain-dem-v1",
         tileSize: 512,
-        maxzoom: 14
+        maxzoom: 17  // Increased from 14 to allow more detailed terrain
       },
       // Native Land tileset source
       "native-land": {
@@ -836,57 +837,40 @@ camera: {
         </div>
       )}
       
+      {/* Set up for dual view approach - one MapView for the basemap and one OrbitView for 3D photos */}
       <DeckGL
         initialViewState={initialViewState}
         viewState={effectiveViewState}
+        controller={{
+          scrollZoom: {
+            speed: 0.005, // Slower for more precise zooming
+            smooth: true
+          },
+          dragPan: true,
+          dragRotate: true,
+          doubleClickZoom: true,
+          touchZoom: true,
+          touchRotate: true,
+          keyboard: true,
+          inertia: true
+        }}
         onViewStateChange={({ viewState }) => {
-          // Only log significant changes to reduce console spam
-          if (Math.abs(viewState.zoom - effectiveViewState.zoom) > 0.5 ||
-              Math.abs(viewState.pitch - effectiveViewState.pitch) > 5 ||
-              Math.abs(viewState.bearing - effectiveViewState.bearing) > 5) {
-            // console.log("DeckGL significant viewState change:", viewState);
-          }
-          
           // Create a new viewState object rather than modifying the original
           const updatedViewState = { ...viewState };
           
-          // Keep the viewState close to target values if external viewState is provided
-          if (externalViewState) {
-            // Limit drift from target values - gentle constraints
-            const zoomDiff = Math.abs(updatedViewState.zoom - externalViewState.zoom);
-            if (zoomDiff > 2) {
-              // If zoom drifts too far, nudge it back toward target
-              updatedViewState.zoom = updatedViewState.zoom > externalViewState.zoom 
-                ? externalViewState.zoom + 2 
-                : externalViewState.zoom - 2;
-            }
-          }
-          
-          // We no longer hide territories based on zoom level
-          // This is now controlled by the territory visibility checkboxes
+          // Ensure the zoom value isn't constrained
+          // (No constraints to allow full zoom range)
           
           setInternalViewState(updatedViewState);
           if (onViewStateChange) {
             onViewStateChange({ viewState: updatedViewState });
           }
         }}
-        controller={{
-          doubleClickZoom: false, // Disable default double-click zoom
-          // If viewState has specific zoom values, use them as constraints
-          minZoom: externalViewState?.zoom ? Math.max(2, externalViewState.zoom - 2) : 2,
-          maxZoom: externalViewState?.zoom ? Math.min(20, externalViewState.zoom + 2) : 20,
-          minPitch: externalViewState?.pitch ? Math.max(0, externalViewState.pitch - 5) : 0,
-          maxPitch: externalViewState?.pitch ? Math.min(85, externalViewState.pitch + 5) : 85,
-          keyboard: true, // Enable keyboard controls
-          inertia: true, // Enable inertia for smoother transitions
-          dragPan: true, // Allow panning
-          dragRotate: true, // Allow rotation
-          scrollZoom: true // Allow zoom with scroll
-        }}
         layers={layers}
         onError={(e) => console.error("DeckGL error:", e)}
       >
         <Map 
+          id="main"
           mapboxAccessToken={MAPBOX_TOKEN}
           mapStyle={customMapStyle}
           onLoad={(event) => {

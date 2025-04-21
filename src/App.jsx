@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { FlyToInterpolator } from '@deck.gl/core';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -9,22 +9,10 @@ import { createPhotoOverlayLayerSync } from './components/Layers/PhotoOverlayLay
 import { getPhotoById, getAllPhotos } from './data/historicalPhotoData';
 import { useViewState } from './hooks/deck/useViewState';
 
-// Pre-defined optimal settings for photos
-// These values come from the "Capture Settings" button logs
-const OPTIMAL_PHOTO_SETTINGS = {
-  "holy-cross": {
-    "offsetX": 0,
-    "offsetY": 0,
-    "rotationX": 30,    // Pitch - rotation around X axis
-    "rotationY": 0,     // Roll - rotation around Y axis
-    "rotationZ": -20,   // Yaw - rotation around Z axis (bearing)
-    "scale": 1.0
-  },
-  // Add more photos here as you optimize them
-};
+import { getAssetPath } from './utils/assetUtils';
 
 // Path to the custom Mapbox style
-const CUSTOM_STYLE_URL = '/assets/geojson/mapBoxStyle.json';
+const CUSTOM_STYLE_URL = getAssetPath('assets/geojson/mapBoxStyle.json');
 
 export default function App() {
   const [error, setError] = useState(null);
@@ -38,23 +26,11 @@ export default function App() {
     others: false   // All other territories
   });
   
-  // Adjustment controls for photo positioning and 3D rotation
+  // Photo adjustment controls
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
-  const [rotationZ, setRotationZ] = useState(0); // Rotation around Z-axis (bearing)
-  const [rotationX, setRotationX] = useState(0); // Rotation around X-axis (pitch)
-  const [rotationY, setRotationY] = useState(0); // Rotation around Y-axis (roll)
-  const [photoScale, setPhotoScale] = useState(1.0);
-  
-  // Store for capturing optimized adjustments
-  const [capturedSettings, setCapturedSettings] = useState({});
-  
-  // Load predefined settings on component mount
-  useEffect(() => {
-    // Initialize with our predefined optimal settings
-    setCapturedSettings(OPTIMAL_PHOTO_SETTINGS);
-    console.log("Loaded optimal photo settings:", OPTIMAL_PHOTO_SETTINGS);
-  }, []);
+  const [rotation, setRotation] = useState(0);
+  const [scale, setScale] = useState(1.0);
   
   // Toggle a territory's visibility
   const toggleTerritory = useCallback((territory) => {
@@ -84,71 +60,26 @@ export default function App() {
   // Use the current effective view state for calculations
   const effectiveViewState = viewState || initialViewState;
   
-  // Function to capture the current photo settings for future use
-  const captureCurrentSettings = useCallback(() => {
-    if (!selectedPhotoId) return;
-    
-    // Save the current settings
-    const settings = {
-      id: selectedPhotoId,
-      offsetX,
-      offsetY,
-      rotationX,
-      rotationY,
-      rotationZ,
-      scale: photoScale
-    };
-    
-    // Add to captured settings
-    setCapturedSettings(prev => ({
-      ...prev,
-      [selectedPhotoId]: settings
-    }));
-    
-    // Log for developer to copy
-    console.log(`
-// Optimized settings for ${selectedPhotoId}:
-"${selectedPhotoId}": {
-  "offsetX": ${offsetX},
-  "offsetY": ${offsetY},
-  "rotationX": ${rotationX},
-  "rotationY": ${rotationY},
-  "rotationZ": ${rotationZ},
-  "scale": ${photoScale}
-},`);
-    
-    return settings;
-  }, [selectedPhotoId, offsetX, offsetY, rotationX, rotationY, rotationZ, photoScale]);
-
   // Handler for when a photo marker is clicked
   const handlePhotoSelect = useCallback((id) => {
     try {
       const photo = getPhotoById(id);
       if (photo) {
-        console.log("Selected photo:", photo.name);
-        console.log("Camera data:", photo.camera);
         setSelectedPhotoId(id);
         
-        // Check if we have saved settings for this photo
-        if (capturedSettings[id]) {
-          // Use saved settings
-          const saved = capturedSettings[id];
-          setOffsetX(saved.offsetX || 0);
-          setOffsetY(saved.offsetY || 0);
-          setRotationX(saved.rotationX || 0);
-          setRotationY(saved.rotationY || 0);
-          setRotationZ(saved.rotationZ || saved.rotation || 0); // Backward compatibility
-          setPhotoScale(saved.scale || 1.0);
-          console.log("Applied saved settings for photo:", id);
-        } else {
-          // Reset adjustment controls for new photos
-          setOffsetX(0);
-          setOffsetY(0);
-          setRotationX(0);
-          setRotationY(0);
-          setRotationZ(0);
-          setPhotoScale(1.0);
-        }
+        // Reset photo adjustments when selecting a new photo
+        setOffsetX(0);
+        setOffsetY(0);
+        setRotation(0);
+        setScale(1.0);
+        
+        // Turn off territory overlays when selecting a photo
+        setTerritoriesVisible({
+          navajo: false,
+          hopi: false,
+          zuni: false,
+          others: false
+        });
         
         // Update the view state to zoom to the selected photo
         // Handle negative pitch values (DeckGL doesn't support negative pitch, only 0-85 degrees)
@@ -175,7 +106,16 @@ export default function App() {
           Math.pow(currentLat - destLat, 2)
         );
         
-        // Use built-in flyTo interpolator with curved path and swooping effect
+        // For Holy Cross Mountain, ensure we can zoom in very close
+        let flightSpeed = 1.2;
+        let flightCurve = 1.5;
+        
+        // Special handling for Holy Cross Mountain - it needs a closer view
+        if (id === 'holy-cross') {
+          // Use exact zoom from photo data - don't clamp it
+          flightSpeed = 1.0; // Slower speed for precision
+          flightCurve = 1.2; // Less curved path for more control
+        }
         
         // Set up to use the built-in FlyToInterpolator from deck.gl
         const newViewState = {
@@ -186,8 +126,8 @@ export default function App() {
           bearing: destBearing,
           transitionDuration: 3000, // 3 seconds total
           transitionInterpolator: new FlyToInterpolator({
-            speed: 1.2,          // Slightly faster flight
-            curve: 1.5,          // More curved path for dramatic effect
+            speed: flightSpeed,
+            curve: flightCurve,
             screenSpeed: 15,     // Control screen-space speed
             maxDuration: 3000    // Maximum flight time
           }),
@@ -199,23 +139,14 @@ export default function App() {
           }
         };
         
-        // Store constraints separately to enforce in MapboxStyleLoader
-        // Don't include these in the viewState object directly
-        const viewStateConstraints = {
-          maxZoom: photo.camera.zoom + 2, // Limit max zoom to slightly more than camera setting
-          minZoom: photo.camera.zoom - 2, // Limit min zoom to slightly less than camera setting
-          maxPitch: pitchValue + 10, // Limit max pitch to slightly more than camera setting
-          minPitch: Math.max(0, pitchValue - 10) // Limit min pitch to slightly less than camera setting
-        };
-        
-        console.log("Setting viewState:", newViewState);
+        // Set the new view state
         setViewState(newViewState);
       }
     } catch (err) {
       console.error("Error selecting photo:", err);
       setError(`Failed to select photo: ${err.message}`);
     }
-  }, []);
+  }, [effectiveViewState, initialViewState]);
 
   // Create the photo markers layer and photo overlay if a photo is selected
   const layers = useMemo(() => {
@@ -230,35 +161,26 @@ export default function App() {
     if (selectedPhotoId) {
       const photoData = getPhotoById(selectedPhotoId);
       if (photoData) {
+        // Add custom adjustment properties to photo data
+        const adjustedPhotoData = {
+          ...photoData,
+          overlay: {
+            ...photoData.overlay,
+            customOffsetX: offsetX,
+            customOffsetY: offsetY,
+            customRotationY: rotation,
+            scale: photoData.overlay.scale ? photoData.overlay.scale * scale : scale
+          }
+        };
+        
         // Create an overlay layer for the selected photo
         try {
-          // Create a modified photo data object with our adjustments
-          const adjustedPhotoData = {
-            ...photoData,
-            camera: {
-              ...photoData.camera,
-              // Apply 3D rotations
-              bearing: (photoData.camera.bearing || 0) + rotationZ,
-              pitch: (photoData.camera.pitch || 0) + rotationX
-            },
-            overlay: {
-              ...photoData.overlay,
-              // Apply our scale adjustment
-              scale: (photoData.overlay.scale || 1.0) * photoScale,
-              // Add custom properties for our adjustments
-              customOffsetX: offsetX,
-              customOffsetY: offsetY,
-              customRotationY: rotationY // Y-axis rotation (roll)
-            }
-          };
-          
-          // Create the photo overlay with our adjustments
           const photoOverlay = createPhotoOverlayLayerSync(
             adjustedPhotoData, 
             0.8  // 80% opacity for better visibility
           );
           
-          console.log("Created photo overlay for:", photoData.name, "with adjustments");
+          // Successfully created overlay
           
           if (photoOverlay) {
             layerList.push(photoOverlay);
@@ -270,7 +192,7 @@ export default function App() {
     }
     
     return layerList;
-  }, [selectedPhotoId, handlePhotoSelect, offsetX, offsetY, rotationX, rotationY, rotationZ, photoScale]);
+  }, [selectedPhotoId, handlePhotoSelect, offsetX, offsetY, rotation, scale]);
   
   // Render selected photo info if a photo is selected
   const selectedPhoto = selectedPhotoId ? getPhotoById(selectedPhotoId) : null;
@@ -371,39 +293,72 @@ export default function App() {
         </div>
       )}
       
-      {/* Display selected photo info */}
+      {/* Display selected photo info and adjustment controls */}
       {selectedPhoto && (
         <div style={{ 
           position: 'absolute', 
           top: 10, 
           right: 10, 
           zIndex: 10, 
-          background: 'rgba(255, 255, 255, 0.8)', 
+          background: 'rgba(255, 255, 255, 0.9)', 
           padding: '10px', 
           borderRadius: '4px',
-          maxWidth: '300px',
-          maxHeight: '80vh',
-          overflowY: 'auto',
-          boxShadow: '0 0 10px rgba(0,0,0,0.3)'
+          maxWidth: '320px',
+          boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+          maxHeight: '90vh',
+          overflowY: 'auto'
         }}>
           <h3 style={{ margin: '0 0 5px 0' }}>{selectedPhoto.name}</h3>
           <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
             Photographer: {selectedPhoto.photographer}, {selectedPhoto.year}
           </p>
-          <p style={{ margin: '0 0 10px 0', fontSize: '12px' }}>
+          
+          {/* Photo preview */}
+          <div style={{ 
+            margin: '10px 0', 
+            border: '1px solid #ddd', 
+            borderRadius: '4px',
+            overflow: 'hidden',
+            maxHeight: '250px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: '#f5f5f5'
+          }}>
+            <img 
+              src={selectedPhoto.image_url.startsWith('http') 
+                ? selectedPhoto.image_url
+                : getAssetPath(selectedPhoto.image_url.replace(/^\//,''))} 
+              alt={selectedPhoto.name}
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '250px',
+                objectFit: 'contain'
+              }}
+            />
+          </div>
+          
+          <p style={{ margin: '5px 0', fontSize: '12px' }}>
             {selectedPhoto.description}
           </p>
           
+          {/* Camera position info */}
+          <div style={{ fontSize: '11px', color: '#666', margin: '5px 0' }}>
+            <div>Location: {selectedPhoto.coordinates.latitude.toFixed(4)}, {selectedPhoto.coordinates.longitude.toFixed(4)}</div>
+            <div>Elevation: {selectedPhoto.elevation_feet}ft ({selectedPhoto.elevation_meters}m)</div>
+            <div>Camera Zoom: {selectedPhoto.camera.zoom}</div>
+          </div>
+          
           {/* Photo adjustment controls */}
           <div style={{ marginTop: '10px', borderTop: '1px solid #ddd', paddingTop: '8px' }}>
-            <h4 style={{ margin: '0 0 5px 0', fontSize: '14px' }}>Adjust Photo Overlay:</h4>
+            <h4 style={{ margin: '0 0 5px 0', fontSize: '14px' }}>Adjust Photo Position:</h4>
             
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
               <label style={{ width: '80px', fontSize: '12px' }}>Position X:</label>
               <input 
                 type="range" 
-                min="-100" 
-                max="100" 
+                min="-50" 
+                max="50" 
                 value={offsetX} 
                 onChange={(e) => setOffsetX(Number(e.target.value))}
                 style={{ flex: 1 }}
@@ -415,8 +370,8 @@ export default function App() {
               <label style={{ width: '80px', fontSize: '12px' }}>Position Y:</label>
               <input 
                 type="range" 
-                min="-100" 
-                max="100" 
+                min="-50" 
+                max="50" 
                 value={offsetY} 
                 onChange={(e) => setOffsetY(Number(e.target.value))}
                 style={{ flex: 1 }}
@@ -425,42 +380,16 @@ export default function App() {
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-              <label style={{ width: '80px', fontSize: '12px' }}>Rot-Z (Yaw):</label>
+              <label style={{ width: '80px', fontSize: '12px' }}>Rotation:</label>
               <input 
                 type="range" 
                 min="-180" 
                 max="180" 
-                value={rotationZ} 
-                onChange={(e) => setRotationZ(Number(e.target.value))}
+                value={rotation} 
+                onChange={(e) => setRotation(Number(e.target.value))}
                 style={{ flex: 1 }}
               />
-              <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{rotationZ}°</span>
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-              <label style={{ width: '80px', fontSize: '12px' }}>Rot-X (Pitch):</label>
-              <input 
-                type="range" 
-                min="-90" 
-                max="90" 
-                value={rotationX} 
-                onChange={(e) => setRotationX(Number(e.target.value))}
-                style={{ flex: 1 }}
-              />
-              <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{rotationX}°</span>
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-              <label style={{ width: '80px', fontSize: '12px' }}>Rot-Y (Roll):</label>
-              <input 
-                type="range" 
-                min="-90" 
-                max="90" 
-                value={rotationY} 
-                onChange={(e) => setRotationY(Number(e.target.value))}
-                style={{ flex: 1 }}
-              />
-              <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{rotationY}°</span>
+              <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{rotation}°</span>
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
@@ -470,79 +399,68 @@ export default function App() {
                 min="0.1" 
                 max="2" 
                 step="0.1" 
-                value={photoScale} 
-                onChange={(e) => setPhotoScale(Number(e.target.value))}
+                value={scale} 
+                onChange={(e) => setScale(Number(e.target.value))}
                 style={{ flex: 1 }}
               />
-              <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{photoScale.toFixed(1)}x</span>
+              <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{scale}x</span>
             </div>
             
-            <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => {
-                    setOffsetX(0);
-                    setOffsetY(0);
-                    setRotationX(0);
-                    setRotationY(0);
-                    setRotationZ(0);
-                    setPhotoScale(1.0);
-                  }}
-                  style={{
-                    padding: '5px 10px',
-                    fontSize: '12px',
-                    backgroundColor: '#f0f0f0',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Reset
-                </button>
-                
-                <button
-                  onClick={() => captureCurrentSettings()}
-                  style={{
-                    padding: '5px 10px',
-                    fontSize: '12px',
-                    backgroundColor: '#4CAF50',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                  title="Logs current settings to console for saving"
-                >
-                  Capture Settings
-                </button>
-                
-                <button
-                  onClick={() => setSelectedPhotoId(null)}
-                  style={{
-                    padding: '5px 10px',
-                    fontSize: '12px',
-                    backgroundColor: '#4a90e2',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-              
-              {capturedSettings[selectedPhotoId] && (
-                <div style={{ 
-                  fontSize: '10px', 
-                  backgroundColor: '#f0f8ff', 
-                  padding: '4px',
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => {
+                  setOffsetX(0);
+                  setOffsetY(0);
+                  setRotation(0);
+                  setScale(1.0);
+                }}
+                style={{
+                  padding: '5px 10px',
+                  background: '#f0f0f0',
+                  border: '1px solid #ccc',
                   borderRadius: '4px',
-                  color: '#444'
-                }}>
-                  Settings saved for this photo!
-                </div>
-              )}
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Reset Adjustments
+              </button>
+              
+              <button
+                onClick={() => {
+                  setTerritoriesVisible({
+                    navajo: true,
+                    hopi: true,
+                    zuni: true,
+                    others: false
+                  });
+                }}
+                style={{
+                  padding: '5px 10px',
+                  background: '#f8c96d',
+                  border: '1px solid #dda33a',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Show Territories
+              </button>
+              
+              <button
+                onClick={() => setSelectedPhotoId(null)}
+                style={{
+                  padding: '5px 10px',
+                  background: '#4a90e2',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

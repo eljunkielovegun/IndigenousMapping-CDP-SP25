@@ -62,7 +62,7 @@
             "type": "vector"
         }
     },
-    "sprite": "mapbox://sprites/tamrshby/cm8m58fhc00q201paauxb86xl/4k3ig1kc5szzqps073yno6h3b",
+    "sprite": "mapbox://sprites/mapbox/streets-v11",
     "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
     "projection": {"name": "globe"},
     "layers": [
@@ -176,16 +176,7 @@
             "source-layer": "established-reservations-4ct0gy",
             "slot": "",
             "layout": {
-                "icon-image": [
-                    "image",
-                    "circle",
-                    {
-                        "params": {
-                            "background": "hsl(139, 100%, 53%)",
-                            "stroke": "hsl(139, 100%, 53%)"
-                        }
-                    }
-                ],
+                "icon-image": "circle",
                 "icon-allow-overlap": true,
                 "icon-size": 0.5,
                 "text-field": ["to-string", ["get", "title"]],
@@ -223,7 +214,7 @@
             "slot": "",
             "layout": {
                 "icon-image": "marker-editor",
-                "icon-size-scale-range": [0.1, 0.5],
+                "icon-size": 0.5,
                 "icon-allow-overlap": true
             },
             "paint": {}
@@ -236,17 +227,8 @@
             "source-layer": "hillers-expedition-route-4zoujj",
             "slot": "",
             "layout": {
-                "icon-image": [
-                    "image",
-                    "marker-editor",
-                    {
-                        "params": {
-                            "color-1": "hsl(0, 85%, 40%)",
-                            "color-2": "hsl(0, 78%, 86%)"
-                        }
-                    }
-                ],
-                "icon-size-scale-range": [0.1, 0.5],
+                "icon-image": "marker-editor",
+                "icon-size": 0.5,
                 "icon-allow-overlap": true
             },
             "paint": {}
@@ -258,17 +240,8 @@
             "source-layer": "general-images-locations-3pc5c7",
             "slot": "",
             "layout": {
-                "icon-image": [
-                    "image",
-                    "marker-editor",
-                    {
-                        "params": {
-                            "color-1": "hsl(54, 72%, 49%)",
-                            "color-2": "hsl(51, 57%, 83%)"
-                        }
-                    }
-                ],
-                "icon-size-scale-range": [1, 0.6],
+                "icon-image": "marker-editor",
+                "icon-size": 0.6,
                 "icon-allow-overlap": true
             },
             "paint": {}

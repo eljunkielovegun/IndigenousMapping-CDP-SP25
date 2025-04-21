@@ -7,6 +7,7 @@ export default function createPhotoMarkersLayer({ onPhotoSelect = () => {} } = {
   
   return new ScatterplotLayer({
     id: 'photo-markers',
+    viewId: 'main', // Explicitly assign to the main map view
     data: photos,
     pickable: true,
     opacity: 1,

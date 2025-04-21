@@ -307,8 +307,9 @@ export function useMapboxStyle(styleUrl = null) {
 
         // Use local sprites to avoid CORS issues
         if (styleData.sprite) {
-          // Point to local sprite files
-          styleData.sprite = '/assets/geojson/sprite_images/sprite';
+          // Point to local sprite files using asset path utility
+          const assetPath = await import('../../utils/assetUtils');
+          styleData.sprite = assetPath.getAssetPath('assets/geojson/sprite_images/sprite');
           console.log('Using local sprite images:', styleData.sprite);
         }
 

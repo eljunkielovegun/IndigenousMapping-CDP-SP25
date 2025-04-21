@@ -2,6 +2,8 @@
 import { BitmapLayer } from '@deck.gl/layers';
 import { load } from '@loaders.gl/core';
 import { ImageLoader } from '@loaders.gl/images';
+import { Matrix4 } from '@math.gl/core';
+import { getAssetPath } from '../../utils/assetUtils';
 
 /**
  * Creates a bitmap layer for overlaying historical photos on the map
@@ -17,8 +19,13 @@ export async function createPhotoOverlayLayer(photoData, opacity = 0.5) {
   }
 
   try {
+    // Process the image URL to handle relative paths
+    const imgUrl = photoData.image_url.startsWith('http') 
+      ? photoData.image_url 
+      : getAssetPath(photoData.image_url.replace(/^\//, ''));
+    
     // Load the image asynchronously
-    const image = await load(photoData.image_url, ImageLoader);
+    const image = await load(imgUrl, ImageLoader);
     
     // Create and return the bitmap layer
     return new BitmapLayer({
@@ -58,8 +65,6 @@ export function createPhotoOverlayLayerSync(photoData, opacity = 0.5, onImageLoa
     photoData.overlay.bounds[1][1]  // top
   ];
   
-  console.log("Photo overlay bounds (flat):", bounds);
-  
   // Apply custom offsets if provided (in degrees)
   const pixelToDegree = 0.0001; // Rough approximation
   const offsetX = photoData.overlay.customOffsetX ? photoData.overlay.customOffsetX * pixelToDegree : 0;
@@ -72,8 +77,6 @@ export function createPhotoOverlayLayerSync(photoData, opacity = 0.5, onImageLoa
     bounds[2] + offsetX,
     bounds[3] + offsetY
   ];
-  
-  console.log("Offset bounds:", offsetBounds, "Offsets:", offsetX, offsetY);
   
   // Get center point for positioning (with offsets applied)
   const centerLon = (offsetBounds[0] + offsetBounds[2]) / 2;
@@ -117,45 +120,72 @@ export function createPhotoOverlayLayerSync(photoData, opacity = 0.5, onImageLoa
     centerLat + newHeight/2  // top
   ];
   
-  console.log("Original bounds:", bounds);
-  console.log("Adjusted bounds:", adjustedBounds);
-  
   // Load and prepare the image first (synchronously)
   const img = new Image();
   img.crossOrigin = 'anonymous';
   
   // This is important - set the src and force the browser to start loading
-  // Make sure to handle relative paths correctly (add domain if needed)
-  console.log("Loading image from:", photoData.image_url);
-  img.src = photoData.image_url.startsWith('/') 
-    ? window.location.origin + photoData.image_url 
-    : photoData.image_url;
+  // Make sure to handle relative paths correctly with assetUtils
+  const imgUrl = photoData.image_url.startsWith('http') 
+    ? photoData.image_url 
+    : getAssetPath(photoData.image_url.replace(/^\//, ''));
   
-  // Debug image loading
-  img.onload = () => {
-    console.log(`✅ Image for ${photoData.id} loaded successfully! Size: ${img.width}x${img.height}`);
-  };
+  img.src = imgUrl;
+  
+  // Debug image loading - only log on error
+  img.onload = () => {};
   
   img.onerror = (err) => {
     console.error(`❌ Failed to load image for ${photoData.id}:`, err);
   };
 
-  // Create the bitmap layer with 3D rotation using transformation matrix
+  // Create the bitmap layer with rotation to stand upright
+  // Create a transformation matrix to make the image stand upright
+  let modelMatrix = null;
+  
+  // Always create a model matrix for standing upright
+  try {
+    // Create matrix and translate to center for rotation operations
+    modelMatrix = new Matrix4();
+    modelMatrix.translate([centerLon, centerLat, 0]);
+    
+    // CRITICAL: Apply a 90-degree X rotation to make it stand upright (facing the camera)
+    // This converts from "lying flat" to "standing upright"
+    modelMatrix.rotateX(Math.PI/2);
+    
+    // Order of rotations is important:
+    // 1. First apply Z rotation (bearing/yaw) - changes which direction it faces
+    // 2. Then apply Y rotation (roll) - tilts it side to side
+    // 3. Then apply any additional X rotation (pitch) - tilts it forward/backward
+    
+    // Apply bearing (yaw) first - rotates around vertical axis
+    if (bearing !== 0) modelMatrix.rotateZ(bearing * Math.PI / 180);
+    
+    // Apply roll (side tilt) second
+    if (roll !== 0) modelMatrix.rotateY(roll * Math.PI / 180);
+    
+    // Apply any additional pitch adjustment third (on top of the 90° base rotation)
+    // This can tilt the photo to face slightly up or down
+    if (pitch !== 0) modelMatrix.rotateX(pitch * Math.PI / 180);
+    
+    // Translate back to original position
+    modelMatrix.translate([-centerLon, -centerLat, 0]);
+    
+    // Matrix created successfully
+  } catch (err) {
+    console.error("Failed to create model matrix:", err);
+  }
+  
   const bitmapLayer = new BitmapLayer({
     id: `photo-overlay-${photoData.id}`,
     bounds: adjustedBounds,
-    image: photoData.image_url.startsWith('/') 
-      ? window.location.origin + photoData.image_url 
-      : photoData.image_url,
+    image: imgUrl, // Use the processed URL from above
     opacity: opacity,
-    // Apply 3D rotation with the model matrix
-    modelMatrix: (bearing !== 0 || pitch !== 0 || roll !== 0) ? 
-      get3DRotationMatrix(centerLon, centerLat, bearing, pitch, roll) : null
+    modelMatrix: modelMatrix, // Apply the upright transformation
+    parameters: {
+      depthTest: false // Ensure photo renders on top of terrain
+    }
   });
-  
-  // Log for debugging
-  console.log(`Created bitmap layer for ${photoData.id}, image loading from ${photoData.image_url}`);
-  console.log(`Camera rotation - bearing: ${bearing}°, pitch: ${pitch}°, roll: ${roll}°`);
   
   return bitmapLayer;
 }
