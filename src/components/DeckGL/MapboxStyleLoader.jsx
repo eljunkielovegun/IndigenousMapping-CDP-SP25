@@ -17,7 +17,8 @@ export default function MapboxStyleLoader({
     hopi: true,     // Default to showing Hopi territory
     zuni: true,     // Default to showing Zuni territory
     others: false   // Default to hiding other territories
-  }
+  },
+  showMapboxMarkers = false
 }) {
   const initialViewState = useViewState();
   const [internalViewState, setInternalViewState] = useState(initialViewState);
@@ -470,7 +471,7 @@ camera: {
               },
               "geometry": {
                 "type": "Point",
-                "coordinates": [-112.11, 36.10]
+                "coordinates": [-112.1129, 36.0544]
               }
             },
             {
@@ -722,120 +723,91 @@ camera: {
   };
 
 
+  // Function to conditionally hide marker layers
+  const hideMarkerLayers = (style) => {
+    // If markers should be shown, return the style unmodified
+    if (showMapboxMarkers) {
+      return style;
+    }
+    
+    // Create a deep copy of the style
+    const filteredStyle = JSON.parse(JSON.stringify(style));
+    
+    // IDs of marker layers to hide in the Mapbox style
+    // Note: This only affects the built-in Mapbox markers, not the DeckGL photo markers
+    const markerLayersToHide = [
+      "expedition-points",
+      "expedition-point-labels",
+      "origin-destination-markers",
+      "origin-destination-labels",
+      "general-photo-markers",
+      "general-photo-labels"
+    ];
+    
+    // Filter out the marker layers
+    filteredStyle.layers = filteredStyle.layers.map(layer => {
+      if (markerLayersToHide.includes(layer.id)) {
+        // Hide the layer by setting visibility to none
+        return {
+          ...layer,
+          layout: {
+            ...(layer.layout || {}),
+            visibility: "none"
+          }
+        };
+      }
+      return layer;
+    });
+    
+    return filteredStyle;
+  };
+
   // Apply territory filters to create the final style
-  const customMapStyle = filterTerritoryLayers(baseMapStyle);
+  const territoriesFilteredStyle = filterTerritoryLayers(baseMapStyle);
+  
+  // Apply marker hiding to create the final style
+  const customMapStyle = hideMarkerLayers(territoriesFilteredStyle);
   
   // Log the style when territory visibility changes
   useEffect(() => {
     // console.log("Territory visibility updated:", territoriesVisible);
   }, [territoriesVisible]);
   
-  // Add a transition progress indicator
-  const [transitionProgress, setTransitionProgress] = useState(null);
-  
-  // Track transition state
+  // Update Mapbox markers visibility when showMapboxMarkers changes
   useEffect(() => {
-    // If we receive a new viewState with a transition duration, track progress
-    if (externalViewState?.transitionDuration) {
-      // Start transition progress tracking
-      setTransitionProgress(0);
+    if (mapInstance) {
+      const markerLayers = [
+        "expedition-points",
+        "expedition-point-labels",
+        "origin-destination-markers",
+        "origin-destination-labels",
+        "general-photo-markers",
+        "general-photo-labels"
+      ];
       
-      const duration = externalViewState.transitionDuration;
-      const startTime = Date.now();
-      
-      // Update progress at regular intervals
-      const intervalId = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(1, elapsed / duration);
-        
-        // Apply easing to the progress for a more accurate visual representation
-        let visualProgress = progress;
-        if (externalViewState.transitionEasing && typeof externalViewState.transitionEasing === 'function') {
-          try {
-            visualProgress = externalViewState.transitionEasing(progress);
-          } catch (e) {
-            // Fall back to linear if there's an error
-            console.log("Error with easing function:", e);
+      // Set visibility for each marker layer
+      markerLayers.forEach(layerId => {
+        try {
+          if (mapInstance.getLayer(layerId)) {
+            mapInstance.setLayoutProperty(
+              layerId, 
+              'visibility', 
+              showMapboxMarkers ? 'visible' : 'none'
+            );
           }
+        } catch (error) {
+          console.log(`Could not update layer ${layerId}: ${error.message}`);
         }
-        
-        setTransitionProgress(visualProgress);
-        
-        // Clear interval when done
-        if (progress >= 1) {
-          // Add a small delay before hiding the progress bar
-          setTimeout(() => {
-            setTransitionProgress(null);
-          }, 500);
-          clearInterval(intervalId);
-        }
-      }, 50); // Update more frequently for smoother progress bar
+      });
       
-      return () => clearInterval(intervalId);
+      // The DeckGL photo markers are handled separately and are always visible
     }
-  }, [externalViewState]);
+  }, [mapInstance, showMapboxMarkers]);
   
-  // Force redraw when transition progress changes
-  useEffect(() => {
-    if (mapInstance && transitionProgress !== null) {
-      mapInstance.triggerRepaint();
-    }
-  }, [mapInstance, transitionProgress]);
+  // No transition progress tracking
   
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, background: 'white', padding: '5px' }}>
-        Indigenous Territory Map - Navajo Nation
-      </div>
-      
-      {/* Small info text about capturing position */}
-      <div style={{ 
-        position: 'absolute', 
-        bottom: 30, 
-        right: 10, 
-        zIndex: 10, 
-        background: 'rgba(255,255,255,0.7)', 
-        padding: '5px', 
-        fontSize: '12px',
-        borderRadius: '4px'
-      }}>
-        Press C to capture camera position
-      </div>
-      
-      {/* Transition progress indicator */}
-      {transitionProgress !== null && (
-        <div style={{
-          position: 'absolute',
-          bottom: 70,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 20,
-          background: 'rgba(0,0,0,0.7)',
-          padding: '8px 16px',
-          borderRadius: '20px',
-          color: 'white',
-          fontSize: '14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <div style={{
-            width: '100px',
-            height: '5px',
-            background: 'rgba(255,255,255,0.3)',
-            borderRadius: '2px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${transitionProgress * 100}%`,
-              background: 'white',
-              transition: 'width 0.1s ease'
-            }} />
-          </div>
-          <span>Loading view... {Math.round(transitionProgress * 100)}%</span>
-        </div>
-      )}
       
       {/* Set up for dual view approach - one MapView for the basemap and one OrbitView for 3D photos */}
       <DeckGL
@@ -873,10 +845,34 @@ camera: {
           id="main"
           mapboxAccessToken={MAPBOX_TOKEN}
           mapStyle={customMapStyle}
+          attributionControl={false}
+          logoPosition="bottom-right"
+          interactive={true}
+          cooperativeGestures={false}
+          locale={{
+            'AttributionControl.ToggleAttribution': '',
+            'AttributionControl.ChangeAttribution': '',
+            'TerrainControl.enableTerrain': '',
+            'NavigationControl.ZoomIn': '',
+            'NavigationControl.ZoomOut': '',
+            'NavigationControl.ResetBearing': '',
+            'GeolocateControl.Find': '',
+            'GeolocateControl.FindMe': '',
+            'ScaleControl.Feet': '',
+            'ScaleControl.Meters': '',
+            'LogoControl.Title': '',
+            'Map.Title': ''
+          }}
           onLoad={(event) => {
             console.log('Map loaded successfully');
             setMapLoaded(true);
             setMapInstance(event.target);
+            
+            // Remove Improve Map link after load
+            const map = event.target;
+            map.getContainer().querySelectorAll('.mapboxgl-ctrl-attrib-inner, .mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo, .mapboxgl-ctrl-bottom-right').forEach(el => {
+              el.style.display = 'none';
+            });
           }}
         />
         {mapLoaded && children}

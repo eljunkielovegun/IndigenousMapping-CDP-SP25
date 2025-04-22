@@ -4,3 +4,58 @@ html, body, #root {
   width: 100%;
   height: 100%;
 }
+
+/* Use Adobe Aldine as the default font for the application */
+body {
+  font-family: "adobe-aldine", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Adobe Adelle Heavy font */
+.adelle-heavy {
+  font-family: "adelle", serif;
+  font-weight: 900;
+  font-style: normal;
+}
+
+/* Geographica Hand Regular font */
+.geographica-hand {
+  font-family: "geographica-hand", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Adobe Aldine Regular font */
+.aldine-regular {
+  font-family: "adobe-aldine", serif !important;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* For regular text elements */
+.aldine-text {
+  font-family: "adobe-aldine", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Adobe Aldine Bold font */
+.aldine-bold {
+  font-family: "adobe-aldine", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Hide Mapbox controls and attribution */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-attrib-inner,
+.mapboxgl-ctrl-attrib-button,
+.mapboxgl-ctrl-bottom-right,
+.mapboxgl-ctrl-bottom-left {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

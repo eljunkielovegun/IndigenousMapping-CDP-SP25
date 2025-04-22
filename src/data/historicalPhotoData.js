@@ -475,8 +475,8 @@ export const historicalPhotos = {
     catalog_ref: "null",
     description: "Grand Canyon [Arizona]",
     coordinates: {
-      latitude: 39.4668,
-      longitude: -106.4817
+      latitude: 36.0544,
+      longitude: -112.1129
     },
     elevation_feet: 10000,
     elevation_meters: 3000,
@@ -494,8 +494,8 @@ export const historicalPhotos = {
     overlay: {
       opacity: 0.5,
       bounds: [
-        [-106.4830, 39.4660],  // Southwest corner
-        [-106.4800, 39.4680]   // Northeast corner
+        [-112.1430, 36.0530],  // Southwest corner
+        [-112.1100, 36.0560]   // Northeast corner
       ]
     },
     image_url: "null"

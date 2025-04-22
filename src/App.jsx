@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { FlyToInterpolator } from '@deck.gl/core';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -8,6 +8,8 @@ import createPhotoMarkersLayer from './components/Layers/PhotoMarkersLayer';
 import { createPhotoOverlayLayerSync } from './components/Layers/PhotoOverlayLayer';
 import { getPhotoById, getAllPhotos } from './data/historicalPhotoData';
 import { useViewState } from './hooks/deck/useViewState';
+import { useGestureHandlers } from './hooks/useGestureHandlers';
+import { MAPBOX_TOKEN } from './config/mapbox';
 
 import { getAssetPath } from './utils/assetUtils';
 
@@ -25,6 +27,7 @@ export default function App() {
     zuni: true,     // Zuni Nation
     others: false   // All other territories
   });
+  const [showMapboxMarkers, setShowMapboxMarkers] = useState(false);
   
   // Photo adjustment controls
   const [offsetX, setOffsetX] = useState(0);
@@ -59,6 +62,12 @@ export default function App() {
   
   // Use the current effective view state for calculations
   const effectiveViewState = viewState || initialViewState;
+  
+  // Set up gesture handlers for navigation, including the "go home" feature
+  const { gestureBindings, goToHomeView } = useGestureHandlers(setViewState, setSelectedPhotoId);
+  
+  // Reference to the main container for gesture binding
+  const containerRef = useRef(null);
   
   // Handler for when a photo marker is clicked
   const handlePhotoSelect = useCallback((id) => {
@@ -198,12 +207,161 @@ export default function App() {
   const selectedPhoto = selectedPhotoId ? getPhotoById(selectedPhotoId) : null;
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, background: 'white', padding: '10px', borderRadius: '4px', boxShadow: '0 0 10px rgba(0,0,0,0.3)' }}>
-        <h3 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>Indigenous Territories & Expeditions</h3>
+    <div 
+      ref={containerRef} 
+      style={{ width: '100vw', height: '100vh', position: 'relative' }}
+      {...gestureBindings()}
+    >
+      {/* Flat Mini-map for returning to the initial view */}
+      <div
+        onClick={goToHomeView}
+        style={{
+          position: 'absolute',
+          bottom: '5vw',
+          right: '5vw',
+          zIndex: 15,
+          background: 'transparent',
+          border: 'none',
+          borderRadius: '8px',
+          width: '128px',
+          height: '128px',
+          overflow: 'visible',
+          cursor: 'pointer'
+        }}
+        title="Return to home view (you can also swipe left with three fingers or long drag left)"
+      >
+        {/* Mini-map content with indigenous territories overlay */}
+        <div style={{ 
+          width: '120px', 
+          height: '120px',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          borderRadius: '4px',
+          position: 'absolute',
+          top: '4px',
+          left: '4px',
+          backgroundColor: 'transparent',
+          overflow: 'hidden',
+        }}>
+        
+        {/* Outer white border ring */}
+        <div style={{
+          position: 'absolute',
+          top: -4,
+          left: -4,
+          width: 'calc(100% + 8px)',
+          height: 'calc(100% + 8px)',
+          borderRadius: '8px',
+          border: '4px solid rgb(255, 255, 255)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          pointerEvents: 'none',
+          zIndex: 2
+        }}></div>
+          {/* Base layer with Mapbox satellite */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/-110.2,36.5,4.5,0/120x120@2x?attribution=false&logo=false&access_token=${MAPBOX_TOKEN})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 1.0
+          }}></div>
+          
+          {/* Native Land territories (using SVG approach since map is static) */}
+          <div style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none'}}>
+            {/* Navajo (Diné) Territory */}
+            <svg width="120" height="120" viewBox="0 0 120 120" style={{position: 'absolute', top: 0, left: 0}}>
+              <path d="M22 42 C38 30 50 33 60 33 C75 33 90 42 105 48 C102 60 97 72 90 82 C75 90 60 87 38 75 C22 60 22 42 22 42 Z" 
+                    fill="hsla(0, 99%, 61%, 0.5)" 
+                    strokeWidth="1.5" 
+                    stroke="hsl(0, 99%, 41%)" />
+            </svg>
+            
+            {/* Hopi Territory */}
+            <svg width="120" height="120" viewBox="0 0 120 120" style={{position: 'absolute', top: 0, left: 0}}>
+              <circle cx="60" cy="57" r="12" 
+                    fill="hsla(294, 66%, 34%, 0.5)" 
+                    strokeWidth="1.5" 
+                    stroke="hsl(294, 66%, 24%)" />
+            </svg>
+            
+            {/* Zuni Territory */}
+            <svg width="120" height="120" viewBox="0 0 120 120" style={{position: 'absolute', top: 0, left: 0}}>
+              <path d="M38 72 L57 82 L68 72 L53 60 Z" 
+                    fill="hsla(249, 70%, 59%, 0.5)" 
+                    strokeWidth="1.5" 
+                    stroke="hsl(249, 70%, 39%)" />
+            </svg>
+          </div>
+          
+          {/* Simple overlay for flat map */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.1) 100%)',
+            pointerEvents: 'none'
+          }}></div>
+          
+          {/* Current view indicator - white dot */}
+          <div style={{
+            position: 'absolute',
+            border: '1px solid rgba(0, 0, 0, 0.5)',
+            backgroundColor: 'rgba(255, 255, 255, 1)', // Solid white
+            borderRadius: '50%',
+            width: '10px',
+            height: '10px',
+            transform: 'translate(-50%, -50%)',
+            // Calculate position on the mini-map based on longitude/latitude
+            // Adjusted for Southwest focus with territories
+            left: `${Math.min(Math.max(((effectiveViewState.longitude + 118) / 16 * 100), 0), 100)}%`,
+            top: `${Math.min(Math.max(((45 - effectiveViewState.latitude) / 15 * 100), 0), 100)}%`,
+            pointerEvents: 'none',
+            transition: 'all 0.3s ease-out',
+            boxShadow: '0 0 4px rgba(0, 0, 0, 0.5)',
+            zIndex: 1
+          }}></div>
+          
+          {/* No home icon - clean minimalist design */}
+        </div>
+      </div>
+      
+      <div style={{ position: 'absolute', top: '2vw', left: '2vw', zIndex: 10 }}>
+        <h1 className="geographica-hand" style={{ 
+          margin: 0,
+          padding: 0,
+          color: 'white',
+          fontSize: '6rem',
+          letterSpacing: '0em',
+          textShadow: '3px 3px 6px rgba(0,0,0,0.6)',
+          lineHeight: '1.1'
+        }}>
+          Tied To The Land
+        </h1>
+        
+        <h2 className="aldine-regular" style={{ 
+          margin: '0.5rem 0 0 0',
+          padding: 0,
+          color: 'white',
+          fontSize: '2.5rem',
+          maxWidth: '45vw',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+          lineHeight: '1.2'
+        }}>
+          Explore the Jackson-Hillers photographs situated in original Indigenous territories and their history.
+        </h2>
+      </div>
+      
+      <div style={{ position: 'absolute', bottom: '5vw', left: '5vw', zIndex: 10, background: 'white', padding: '10px', borderRadius: '4px', boxShadow: '0 0 10px rgba(0,0,0,0.3)' }}>
+        <h3 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Indigenous Territories & Expeditions</h3>
         
         {/* Legend */}
-        <div style={{ fontSize: '12px', marginBottom: '10px' }}>
+        <div className="aldine-text" style={{ fontSize: '12px', marginBottom: '15px' }}>
           <div><span style={{ color: 'hsla(0, 99%, 61%, 0.83)', fontWeight: 'bold' }}>▬▬▬</span> Hillers Expedition</div>
           <div><span style={{ color: 'hsl(199, 100%, 43%)', fontWeight: 'bold' }}>▬▬▬</span> Jackson Expedition</div>
           <div><span style={{ color: 'hsla(54, 72%, 49%, 0.6)', fontWeight: 'bold' }}>▬▬▬</span> Travel Routes</div>
@@ -215,9 +373,9 @@ export default function App() {
         
         {/* Territory Controls */}
         <div style={{ borderTop: '1px solid #ddd', paddingTop: '8px', marginTop: '5px' }}>
-          <h4 style={{ margin: '0 0 5px 0', fontSize: '14px' }}>Territory Visibility</h4>
+          <h4 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Territory Visibility</h4>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px' }}>
+          <div className="aldine-text" style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px' }}>
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <input 
                 type="checkbox"
@@ -225,7 +383,7 @@ export default function App() {
                 onChange={() => toggleTerritory('navajo')}
                 style={{ marginRight: '5px' }}
               />
-              <span style={{ color: 'hsla(0, 99%, 61%, 0.83)' }}>Diné (Navajo)</span>
+              <span className="aldine-regular" style={{ color: 'hsla(0, 99%, 61%, 0.83)' }}>Diné (Navajo)</span>
             </label>
             
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -235,7 +393,7 @@ export default function App() {
                 onChange={() => toggleTerritory('hopi')}
                 style={{ marginRight: '5px' }}
               />
-              <span style={{ color: 'hsla(294, 66%, 34%, 0.83)' }}>Hopi</span>
+              <span className="aldine-regular" style={{ color: 'hsla(294, 66%, 34%, 0.83)' }}>Hopi</span>
             </label>
             
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -245,7 +403,7 @@ export default function App() {
                 onChange={() => toggleTerritory('zuni')}
                 style={{ marginRight: '5px' }}
               />
-              <span style={{ color: 'hsla(249, 70%, 59%, 0.83)' }}>Zuni</span>
+              <span className="aldine-regular" style={{ color: 'hsla(249, 70%, 59%, 0.83)' }}>Zuni</span>
             </label>
             
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -255,7 +413,7 @@ export default function App() {
                 onChange={() => toggleTerritory('others')}
                 style={{ marginRight: '5px' }}
               />
-              <span style={{ color: 'hsla(156, 66%, 34%, 0.83)' }}>Other Territories</span>
+              <span className="aldine-regular" style={{ color: 'hsla(156, 66%, 34%, 0.83)' }}>Other Territories</span>
             </label>
             
             <button 
@@ -275,6 +433,18 @@ export default function App() {
                 territoriesVisible.zuni && 
                 territoriesVisible.others ? 'Hide All' : 'Show All'}
             </button>
+            
+            <div style={{ borderTop: '1px solid #ddd', marginTop: '10px', paddingTop: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox"
+                  checked={showMapboxMarkers}
+                  onChange={() => setShowMapboxMarkers(!showMapboxMarkers)}
+                  style={{ marginRight: '5px' }}
+                />
+                <span className="aldine-regular">Show Mapbox Expedition Markers</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -308,8 +478,8 @@ export default function App() {
           maxHeight: '90vh',
           overflowY: 'auto'
         }}>
-          <h3 style={{ margin: '0 0 5px 0' }}>{selectedPhoto.name}</h3>
-          <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
+          <h3 className="aldine-bold" style={{ margin: '0 0 8px 0', fontSize: '18px' }}>{selectedPhoto.name}</h3>
+          <p className="aldine-text" style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
             Photographer: {selectedPhoto.photographer}, {selectedPhoto.year}
           </p>
           
@@ -338,12 +508,12 @@ export default function App() {
             />
           </div>
           
-          <p style={{ margin: '5px 0', fontSize: '12px' }}>
+          <p className="aldine-text" style={{ margin: '5px 0', fontSize: '12px' }}>
             {selectedPhoto.description}
           </p>
           
           {/* Camera position info */}
-          <div style={{ fontSize: '11px', color: '#666', margin: '5px 0' }}>
+          <div className="aldine-text" style={{ fontSize: '11px', color: '#666', margin: '5px 0' }}>
             <div>Location: {selectedPhoto.coordinates.latitude.toFixed(4)}, {selectedPhoto.coordinates.longitude.toFixed(4)}</div>
             <div>Elevation: {selectedPhoto.elevation_feet}ft ({selectedPhoto.elevation_meters}m)</div>
             <div>Camera Zoom: {selectedPhoto.camera.zoom}</div>
@@ -351,9 +521,9 @@ export default function App() {
           
           {/* Photo adjustment controls */}
           <div style={{ marginTop: '10px', borderTop: '1px solid #ddd', paddingTop: '8px' }}>
-            <h4 style={{ margin: '0 0 5px 0', fontSize: '14px' }}>Adjust Photo Position:</h4>
+            <h4 className="aldine-bold" style={{ margin: '0 0 8px 0', fontSize: '16px' }}>Adjust Photo Position:</h4>
             
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+            <div className="aldine-text" style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
               <label style={{ width: '80px', fontSize: '12px' }}>Position X:</label>
               <input 
                 type="range" 
@@ -366,7 +536,7 @@ export default function App() {
               <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{offsetX}</span>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+            <div className="aldine-text" style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
               <label style={{ width: '80px', fontSize: '12px' }}>Position Y:</label>
               <input 
                 type="range" 
@@ -379,7 +549,7 @@ export default function App() {
               <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{offsetY}</span>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+            <div className="aldine-text" style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
               <label style={{ width: '80px', fontSize: '12px' }}>Rotation:</label>
               <input 
                 type="range" 
@@ -392,7 +562,7 @@ export default function App() {
               <span style={{ marginLeft: '5px', fontSize: '12px', width: '30px' }}>{rotation}°</span>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+            <div className="aldine-text" style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
               <label style={{ width: '80px', fontSize: '12px' }}>Scale:</label>
               <input 
                 type="range" 
@@ -473,6 +643,7 @@ export default function App() {
         viewState={viewState}
         onViewStateChange={({ viewState }) => setViewState(viewState)}
         territoriesVisible={territoriesVisible}
+        showMapboxMarkers={showMapboxMarkers}
       />
     </div>
   );

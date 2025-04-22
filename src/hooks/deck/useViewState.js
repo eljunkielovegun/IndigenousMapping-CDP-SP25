@@ -1,13 +1,13 @@
 export function useViewState() {
-  // Navajo Nation viewstate in northern Arizona
+  // Utah/Arizona border initial viewpoint
   return {
-    longitude: -109.55,
-    latitude: 36.15,
-    zoom: 7.5,
-    pitch: 45,
-    bearing: 0,
+    longitude: -111.686256,
+    latitude: 37.884571,
+    zoom: 5.51,
+    pitch: 32.91,
+    bearing: -1.48,
     maxPitch: 85,
-    minZoom: 2,
+    minZoom: 1,
     maxZoom: 20,
     transitionDuration: 1000
   };
