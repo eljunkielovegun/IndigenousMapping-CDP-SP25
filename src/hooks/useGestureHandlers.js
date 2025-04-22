@@ -3,7 +3,7 @@ import { useViewState } from './deck/useViewState';
 import { FlyToInterpolator } from '@deck.gl/core';
 
 // Gesture handlers for touch and mouse controls
-export function useGestureHandlers(setViewState, setSelectedPhotoId) {
+export function useGestureHandlers(setViewState, setSelectedPhotoId, setShowInfoPanel, setInfoPanelOpacity) {
   // Get the initial/home view state
   const homeViewState = useViewState();
   
@@ -18,13 +18,33 @@ export function useGestureHandlers(setViewState, setSelectedPhotoId) {
       setSelectedPhotoId(null);
     }
     
+    // Set up timing constants
+    const transitionDuration = 3000;
+    const fadeInDuration = 300;
+    
+    // First make panel visible (but transparent)
+    if (setShowInfoPanel) {
+      setShowInfoPanel(true);
+    }
+    
+    // Start the fade-in so it completes at the same time as the transition
+    setTimeout(() => {
+      if (setInfoPanelOpacity) {
+        setInfoPanelOpacity(1); // Start fade-in animation
+      }
+    }, transitionDuration - fadeInDuration); // Sync the end of fade with end of transition
+    
     // Return to the initial view state with a smooth transition
     setViewState({
       ...homeViewState,
-      transitionDuration: 1000,
-      transitionInterpolator: new FlyToInterpolator(),
+      transitionDuration: transitionDuration, 
+      transitionInterpolator: new FlyToInterpolator({
+        speed: 1.2,
+        curve: 1.5,
+        screenSpeed: 15,
+        maxDuration: transitionDuration
+      }),
       transitionEasing: t => {
-        // Cubic ease-in-out for smooth transition
         return t < 0.5
           ? 4 * t * t * t
           : 1 - Math.pow(-2 * t + 2, 3) / 2;

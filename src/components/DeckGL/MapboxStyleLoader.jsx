@@ -6,6 +6,11 @@ import { useViewState } from '../../hooks/deck/useViewState';
 import { MAPBOX_TOKEN } from '../../config/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+// Static transition flag to avoid React state updates
+// This is a crucial part of our solution to prevent infinite loops
+MapboxStyleLoader._transitionInProgress = false;
+MapboxStyleLoader._lastExternalViewState = null;
+
 export default function MapboxStyleLoader({ 
   styleUrl, 
   children, 
@@ -18,7 +23,8 @@ export default function MapboxStyleLoader({
     zuni: true,     // Default to showing Zuni territory
     others: false   // Default to hiding other territories
   },
-  showMapboxMarkers = false
+  showMapboxMarkers = false,
+  deckRef // Accept the deck ref from parent
 }) {
   const initialViewState = useViewState();
   const [internalViewState, setInternalViewState] = useState(initialViewState);
@@ -28,8 +34,9 @@ export default function MapboxStyleLoader({
   // Use external viewState if provided, otherwise use internal state
   const effectiveViewState = externalViewState || internalViewState;
   
-  // State to track viewState for logging
-  const [lastLoggedViewState, setLastLoggedViewState] = useState(null);
+  // Removed viewState debug logging
+  
+  // Removed viewState tracking for lastLoggedViewState
   
   // Function to capture current viewState and format it for easy copying
   const captureViewState = useCallback(() => {
@@ -169,20 +176,12 @@ camera: {
        
          // console.log("Updated territory visibility");
       } catch (error) {
-        console.log("Error updating territory visibility:", error.message);
+        // Silently handle territory visibility errors
       }
     }
   }, [mapInstance, territoriesVisible]);
   
-  // Only log when externalViewState changes significantly
-  if (externalViewState && 
-      (!lastLoggedViewState || 
-       Math.abs(externalViewState.zoom - (lastLoggedViewState?.zoom || 0)) > 0.1 ||
-       Math.abs(externalViewState.pitch - (lastLoggedViewState?.pitch || 0)) > 1 ||
-       Math.abs(externalViewState.bearing - (lastLoggedViewState?.bearing || 0)) > 1)) {
-    // console.log("MapboxStyleLoader received external viewState:", externalViewState);
-    setLastLoggedViewState(externalViewState);
-  }
+  // Removed conditional logging code that used lastLoggedViewState
 
   // Create a filtered version of the territory layers based on visibility settings
   const filterTerritoryLayers = (baseStyle) => {
@@ -255,12 +254,12 @@ camera: {
         url: "mapbox://mapbox.satellite",
         tileSize: 256
       },
-      // Terrain source - increase maxzoom for better detail on Holy Cross Mountain
+      // Terrain source - reduced maxzoom to avoid 404 errors
       "mapbox-dem": {
         type: "raster-dem",
         url: "mapbox://mapbox.mapbox-terrain-dem-v1",
         tileSize: 512,
-        maxzoom: 17  // Increased from 14 to allow more detailed terrain
+        maxzoom: 14  // Reduced to standard value to avoid 404 errors
       },
       // Native Land tileset source
       "native-land": {
@@ -494,7 +493,7 @@ camera: {
     glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
     terrain: {
       source: "mapbox-dem",
-      exaggeration: 1.5
+      exaggeration: 1.2 // Reduced exaggeration to avoid extreme terrain effects
     },
     layers: [
       // Base satellite layer
@@ -796,7 +795,7 @@ camera: {
             );
           }
         } catch (error) {
-          console.log(`Could not update layer ${layerId}: ${error.message}`);
+          // Silently handle layer update errors
         }
       });
       
@@ -811,35 +810,26 @@ camera: {
       
       {/* Set up for dual view approach - one MapView for the basemap and one OrbitView for 3D photos */}
       <DeckGL
+        ref={deckRef}
         initialViewState={initialViewState}
         viewState={effectiveViewState}
         controller={{
-          scrollZoom: {
-            speed: 0.005, // Slower for more precise zooming
-            smooth: true
-          },
           dragPan: true,
           dragRotate: true,
-          doubleClickZoom: true,
+          scrollZoom: true,
           touchZoom: true,
           touchRotate: true,
-          keyboard: true,
-          inertia: true
+          doubleClickZoom: true,
+          keyboard: true
         }}
-        onViewStateChange={({ viewState }) => {
-          // Create a new viewState object rather than modifying the original
-          const updatedViewState = { ...viewState };
-          
-          // Ensure the zoom value isn't constrained
-          // (No constraints to allow full zoom range)
-          
-          setInternalViewState(updatedViewState);
+        onViewStateChange={(params) => {
+          // Simple passthrough of view state changes
           if (onViewStateChange) {
-            onViewStateChange({ viewState: updatedViewState });
+            onViewStateChange(params);
           }
         }}
         layers={layers}
-        onError={(e) => console.error("DeckGL error:", e)}
+        onError={(e) => console.error("❌ DeckGL error:", e)}
       >
         <Map 
           id="main"
@@ -864,7 +854,6 @@ camera: {
             'Map.Title': ''
           }}
           onLoad={(event) => {
-            console.log('Map loaded successfully');
             setMapLoaded(true);
             setMapInstance(event.target);
             

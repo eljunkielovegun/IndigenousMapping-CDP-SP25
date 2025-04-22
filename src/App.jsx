@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { FlyToInterpolator } from '@deck.gl/core';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -28,6 +28,8 @@ export default function App() {
     others: false   // All other territories
   });
   const [showMapboxMarkers, setShowMapboxMarkers] = useState(false);
+  const [showInfoPanel, setShowInfoPanel] = useState(true); // Control visibility of info panel
+  const [infoPanelOpacity, setInfoPanelOpacity] = useState(1); // Control the opacity for fade effect
   
   // Photo adjustment controls
   const [offsetX, setOffsetX] = useState(0);
@@ -63,99 +65,115 @@ export default function App() {
   // Use the current effective view state for calculations
   const effectiveViewState = viewState || initialViewState;
   
+  // Note: We've removed the debug tracking of viewState changes to avoid potential issues
+  
   // Set up gesture handlers for navigation, including the "go home" feature
-  const { gestureBindings, goToHomeView } = useGestureHandlers(setViewState, setSelectedPhotoId);
+  const { gestureBindings, goToHomeView } = useGestureHandlers(
+    setViewState, 
+    setSelectedPhotoId,
+    setShowInfoPanel,
+    setInfoPanelOpacity
+  );
+  
+  // We've removed the manual keyboard controls since we re-enabled the DeckGL controller
   
   // Reference to the main container for gesture binding
   const containerRef = useRef(null);
   
+  // Reference to the DeckGL component
+  const deckRef = useRef(null);
+  
   // Handler for when a photo marker is clicked
   const handlePhotoSelect = useCallback((id) => {
     try {
+      // Step 1: Get photo data
       const photo = getPhotoById(id);
-      if (photo) {
+      
+      if (!photo) {
+        console.error('❌ No photo data found for id:', id);
+        return;
+      }
+      
+      // Set up timing constants
+      const transitionDuration = 3000;
+      const fadeInDuration = 500;
+      
+      // Start showing the panel slightly before the transition completes
+      // This ensures the fade-in finishes right when the transition does
+      setTimeout(() => {
+        // Step 2: Update UI state slightly before transition completes
         setSelectedPhotoId(id);
         
-        // Reset photo adjustments when selecting a new photo
+        // Reset adjustments
         setOffsetX(0);
         setOffsetY(0);
         setRotation(0);
         setScale(1.0);
-        
-        // Turn off territory overlays when selecting a photo
-        setTerritoriesVisible({
-          navajo: false,
-          hopi: false,
-          zuni: false,
-          others: false
-        });
-        
-        // Update the view state to zoom to the selected photo
-        // Handle negative pitch values (DeckGL doesn't support negative pitch, only 0-85 degrees)
-        let pitchValue = photo.camera.pitch || 60;
-        if (pitchValue < 0) {
-          pitchValue = 0; // Set minimum pitch to 0 when negative values are encountered
-        }
-        
-        // Calculate current position (assuming we're showing something)
-        const currentLng = effectiveViewState?.longitude || initialViewState.longitude;
-        const currentLat = effectiveViewState?.latitude || initialViewState.latitude;
-        const currentZoom = effectiveViewState?.zoom || initialViewState.zoom;
-        
-        // Destination position from photo
-        const destLng = photo.camera.viewpoint.longitude;
-        const destLat = photo.camera.viewpoint.latitude;
-        const destZoom = photo.camera.zoom || 12;
-        const destBearing = photo.camera.bearing || 0;
-        const destPitch = pitchValue;
-        
-        // Calculate distance (rough approximation)
-        const distance = Math.sqrt(
-          Math.pow(currentLng - destLng, 2) + 
-          Math.pow(currentLat - destLat, 2)
-        );
-        
-        // For Holy Cross Mountain, ensure we can zoom in very close
-        let flightSpeed = 1.2;
-        let flightCurve = 1.5;
-        
-        // Special handling for Holy Cross Mountain - it needs a closer view
-        if (id === 'holy-cross') {
-          // Use exact zoom from photo data - don't clamp it
-          flightSpeed = 1.0; // Slower speed for precision
-          flightCurve = 1.2; // Less curved path for more control
-        }
-        
-        // Set up to use the built-in FlyToInterpolator from deck.gl
-        const newViewState = {
-          longitude: destLng,
-          latitude: destLat,
-          zoom: destZoom,
-          pitch: destPitch, 
-          bearing: destBearing,
-          transitionDuration: 3000, // 3 seconds total
-          transitionInterpolator: new FlyToInterpolator({
-            speed: flightSpeed,
-            curve: flightCurve,
-            screenSpeed: 15,     // Control screen-space speed
-            maxDuration: 3000    // Maximum flight time
-          }),
-          transitionEasing: t => {
-            // Ease-in-out cubic for smooth motion
-            return t < 0.5
-              ? 4 * t * t * t
-              : 1 - Math.pow(-2 * t + 2, 3) / 2;
-          }
-        };
-        
-        // Set the new view state
-        setViewState(newViewState);
+      }, transitionDuration - fadeInDuration); // Start fade-in early so they finish together
+      
+      // Hide territories
+      setTerritoriesVisible({
+        navajo: false,
+        hopi: false,
+        zuni: false,
+        others: false
+      });
+      
+      // Start the fade-out effect for the info panel
+      setInfoPanelOpacity(0);
+      
+      // After fade completes, then hide the panel
+      setTimeout(() => {
+        setShowInfoPanel(false);
+      }, 300); // 300ms fade-out transition
+      
+      // Step 3: Extract camera viewpoint
+      const viewpoint = photo.camera?.viewpoint;
+      
+      if (!viewpoint) {
+        console.error('❌ Missing viewpoint data for photo:', id);
+        return;
       }
+      
+      // Step 4: Prepare view state
+      // Ensure pitch is within valid range (0-85)
+      let pitch = photo.camera.pitch || 60;
+      if (pitch < 0) pitch = 0;
+      if (pitch > 85) pitch = 85;
+      
+      // Step 5: Visual feedback - flash background
+      document.body.style.backgroundColor = 'rgba(0,255,0,0.1)';
+      setTimeout(() => document.body.style.backgroundColor = '', 100);
+      
+      // Create enhanced viewstate with better transitions
+      const newViewState = {
+        longitude: viewpoint.longitude,
+        latitude: viewpoint.latitude,
+        zoom: photo.camera.zoom || 15,
+        pitch: pitch,
+        bearing: photo.camera.bearing || 0,
+        transitionDuration: transitionDuration,
+        transitionInterpolator: new FlyToInterpolator({
+          speed: 1.2,
+          curve: 1.5,
+          screenSpeed: 15,
+          maxDuration: transitionDuration
+        }),
+        transitionEasing: t => {
+          return t < 0.5
+            ? 4 * t * t * t
+            : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+      };
+      
+      // Step 6: Apply the new view state
+      setViewState(newViewState);
+      
     } catch (err) {
-      console.error("Error selecting photo:", err);
+      console.error('❌ Error selecting photo:', err);
       setError(`Failed to select photo: ${err.message}`);
     }
-  }, [effectiveViewState, initialViewState]);
+  }, []);
 
   // Create the photo markers layer and photo overlay if a photo is selected
   const layers = useMemo(() => {
@@ -209,7 +227,12 @@ export default function App() {
   return (
     <div 
       ref={containerRef} 
-      style={{ width: '100vw', height: '100vh', position: 'relative' }}
+      style={{ 
+        width: '100vw', 
+        height: '100vh', 
+        position: 'relative',
+        touchAction: 'none' 
+      }}
       {...gestureBindings()}
     >
       {/* Flat Mini-map for returning to the initial view */}
@@ -357,97 +380,111 @@ export default function App() {
         </h2>
       </div>
       
-      <div style={{ position: 'absolute', bottom: '5vw', left: '5vw', zIndex: 10, background: 'white', padding: '10px', borderRadius: '4px', boxShadow: '0 0 10px rgba(0,0,0,0.3)' }}>
-        <h3 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Indigenous Territories & Expeditions</h3>
-        
-        {/* Legend */}
-        <div className="aldine-text" style={{ fontSize: '12px', marginBottom: '15px' }}>
-          <div><span style={{ color: 'hsla(0, 99%, 61%, 0.83)', fontWeight: 'bold' }}>▬▬▬</span> Hillers Expedition</div>
-          <div><span style={{ color: 'hsl(199, 100%, 43%)', fontWeight: 'bold' }}>▬▬▬</span> Jackson Expedition</div>
-          <div><span style={{ color: 'hsla(54, 72%, 49%, 0.6)', fontWeight: 'bold' }}>▬▬▬</span> Travel Routes</div>
-          <div><span style={{ color: 'hsl(54, 100%, 50%)', fontWeight: 'bold' }}>●</span> Major Cities</div>
-          <div><span style={{ color: 'hsl(30, 100%, 50%)', fontWeight: 'bold' }}>●</span> General Photo Locations</div>
-          <div><span style={{ color: 'rgb(255, 87, 51)', fontWeight: 'bold' }}>●</span> Jackson Photos</div>
-          <div><span style={{ color: 'rgb(75, 144, 226)', fontWeight: 'bold' }}>●</span> Hillers Photos</div>
-        </div>
-        
-        {/* Territory Controls */}
-        <div style={{ borderTop: '1px solid #ddd', paddingTop: '8px', marginTop: '5px' }}>
-          <h4 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Territory Visibility</h4>
+      {showInfoPanel && (
+        <div style={{ 
+          position: 'absolute', 
+          bottom: '5vw', 
+          left: '5vw', 
+          zIndex: 10, 
+          background: 'white', 
+          padding: '10px', 
+          borderRadius: '4px', 
+          boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+          opacity: infoPanelOpacity,
+          transition: 'opacity 300ms ease-in-out',
+          pointerEvents: infoPanelOpacity === 0 ? 'none' : 'auto'
+        }}>
+          <h3 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Indigenous Territories & Expeditions</h3>
           
-          <div className="aldine-text" style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input 
-                type="checkbox"
-                checked={territoriesVisible.navajo}
-                onChange={() => toggleTerritory('navajo')}
-                style={{ marginRight: '5px' }}
-              />
-              <span className="aldine-regular" style={{ color: 'hsla(0, 99%, 61%, 0.83)' }}>Diné (Navajo)</span>
-            </label>
+          {/* Legend */}
+          <div className="aldine-text" style={{ fontSize: '12px', marginBottom: '15px' }}>
+            <div><span style={{ color: 'hsla(0, 99%, 61%, 0.83)', fontWeight: 'bold' }}>▬▬▬</span> Hillers Expedition</div>
+            <div><span style={{ color: 'hsl(199, 100%, 43%)', fontWeight: 'bold' }}>▬▬▬</span> Jackson Expedition</div>
+            <div><span style={{ color: 'hsla(54, 72%, 49%, 0.6)', fontWeight: 'bold' }}>▬▬▬</span> Travel Routes</div>
+            <div><span style={{ color: 'hsl(54, 100%, 50%)', fontWeight: 'bold' }}>●</span> Major Cities</div>
+            <div><span style={{ color: 'hsl(30, 100%, 50%)', fontWeight: 'bold' }}>●</span> General Photo Locations</div>
+            <div><span style={{ color: 'rgb(255, 87, 51)', fontWeight: 'bold' }}>●</span> Jackson Photos</div>
+            <div><span style={{ color: 'rgb(75, 144, 226)', fontWeight: 'bold' }}>●</span> Hillers Photos</div>
+          </div>
+          
+          {/* Territory Controls */}
+          <div style={{ borderTop: '1px solid #ddd', paddingTop: '8px', marginTop: '5px' }}>
+            <h4 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Territory Visibility</h4>
             
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input 
-                type="checkbox"
-                checked={territoriesVisible.hopi}
-                onChange={() => toggleTerritory('hopi')}
-                style={{ marginRight: '5px' }}
-              />
-              <span className="aldine-regular" style={{ color: 'hsla(294, 66%, 34%, 0.83)' }}>Hopi</span>
-            </label>
-            
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input 
-                type="checkbox"
-                checked={territoriesVisible.zuni}
-                onChange={() => toggleTerritory('zuni')}
-                style={{ marginRight: '5px' }}
-              />
-              <span className="aldine-regular" style={{ color: 'hsla(249, 70%, 59%, 0.83)' }}>Zuni</span>
-            </label>
-            
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input 
-                type="checkbox"
-                checked={territoriesVisible.others}
-                onChange={() => toggleTerritory('others')}
-                style={{ marginRight: '5px' }}
-              />
-              <span className="aldine-regular" style={{ color: 'hsla(156, 66%, 34%, 0.83)' }}>Other Territories</span>
-            </label>
-            
-            <button 
-              onClick={toggleAllTerritories} 
-              style={{ 
-                marginTop: '5px', 
-                padding: '3px', 
-                fontSize: '11px',
-                background: '#f0f0f0',
-                border: '1px solid #ccc',
-                borderRadius: '3px',
-                cursor: 'pointer'
-              }}
-            >
-              {territoriesVisible.navajo && 
-                territoriesVisible.hopi && 
-                territoriesVisible.zuni && 
-                territoriesVisible.others ? 'Hide All' : 'Show All'}
-            </button>
-            
-            <div style={{ borderTop: '1px solid #ddd', marginTop: '10px', paddingTop: '10px' }}>
+            <div className="aldine-text" style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px' }}>
               <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input 
                   type="checkbox"
-                  checked={showMapboxMarkers}
-                  onChange={() => setShowMapboxMarkers(!showMapboxMarkers)}
+                  checked={territoriesVisible.navajo}
+                  onChange={() => toggleTerritory('navajo')}
                   style={{ marginRight: '5px' }}
                 />
-                <span className="aldine-regular">Show Mapbox Expedition Markers</span>
+                <span className="aldine-regular" style={{ color: 'hsla(0, 99%, 61%, 0.83)' }}>Diné (Navajo)</span>
               </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox"
+                  checked={territoriesVisible.hopi}
+                  onChange={() => toggleTerritory('hopi')}
+                  style={{ marginRight: '5px' }}
+                />
+                <span className="aldine-regular" style={{ color: 'hsla(294, 66%, 34%, 0.83)' }}>Hopi</span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox"
+                  checked={territoriesVisible.zuni}
+                  onChange={() => toggleTerritory('zuni')}
+                  style={{ marginRight: '5px' }}
+                />
+                <span className="aldine-regular" style={{ color: 'hsla(249, 70%, 59%, 0.83)' }}>Zuni</span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox"
+                  checked={territoriesVisible.others}
+                  onChange={() => toggleTerritory('others')}
+                  style={{ marginRight: '5px' }}
+                />
+                <span className="aldine-regular" style={{ color: 'hsla(156, 66%, 34%, 0.83)' }}>Other Territories</span>
+              </label>
+              
+              <button 
+                onClick={toggleAllTerritories} 
+                style={{ 
+                  marginTop: '5px', 
+                  padding: '3px', 
+                  fontSize: '11px',
+                  background: '#f0f0f0',
+                  border: '1px solid #ccc',
+                  borderRadius: '3px',
+                  cursor: 'pointer'
+                }}
+              >
+                {territoriesVisible.navajo && 
+                  territoriesVisible.hopi && 
+                  territoriesVisible.zuni && 
+                  territoriesVisible.others ? 'Hide All' : 'Show All'}
+              </button>
+              
+              <div style={{ borderTop: '1px solid #ddd', marginTop: '10px', paddingTop: '10px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox"
+                    checked={showMapboxMarkers}
+                    onChange={() => setShowMapboxMarkers(!showMapboxMarkers)}
+                    style={{ marginRight: '5px' }}
+                  />
+                  <span className="aldine-regular">Show Mapbox Expedition Markers</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
       
       {error && (
         <div style={{ 
@@ -476,7 +513,8 @@ export default function App() {
           maxWidth: '320px',
           boxShadow: '0 0 10px rgba(0,0,0,0.3)',
           maxHeight: '90vh',
-          overflowY: 'auto'
+          overflowY: 'auto',
+          animation: 'fadeIn 500ms ease-in-out forwards'
         }}>
           <h3 className="aldine-bold" style={{ margin: '0 0 8px 0', fontSize: '18px' }}>{selectedPhoto.name}</h3>
           <p className="aldine-text" style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
@@ -641,9 +679,13 @@ export default function App() {
         styleUrl={CUSTOM_STYLE_URL}
         layers={layers}
         viewState={viewState}
-        onViewStateChange={({ viewState }) => setViewState(viewState)}
+        onViewStateChange={({ viewState: newViewState }) => {
+          // Simple handler now that MapboxStyleLoader blocks updates during transitions
+          setViewState(newViewState);
+        }}
         territoriesVisible={territoriesVisible}
         showMapboxMarkers={showMapboxMarkers}
+        deckRef={deckRef}
       />
     </div>
   );

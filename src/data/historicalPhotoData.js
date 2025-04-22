@@ -14,7 +14,7 @@ export const historicalPhotos = {
     description: "null",
     coordinates: {
       latitude: 41.2565,
-      longitude: -87.637596
+      longitude: -95.9345
     },
     elevation_feet: "null",
     elevation_meters: "nul",

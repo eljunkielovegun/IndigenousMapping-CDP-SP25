@@ -6,6 +6,12 @@ html, body, #root {
   height: 100%;
 }
 
+/* Fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .debug-container {
   position: absolute;
   top: 10px;

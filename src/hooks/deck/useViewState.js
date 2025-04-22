@@ -8,7 +8,7 @@ export function useViewState() {
     bearing: -1.48,
     maxPitch: 85,
     minZoom: 1,
-    maxZoom: 20,
-    transitionDuration: 1000
+    maxZoom: 20
+    // Removed transitionDuration to avoid conflicts with FlyToInterpolator
   };
 }
