@@ -557,6 +557,7 @@ camera: {
         type: "line",
         source: "jackson-expedition-route",
         layout: {
+          "visibility": "none", // Hidden by default
           "line-join": "round",
           "line-cap": "round"
         },
@@ -574,6 +575,7 @@ camera: {
         type: "line",
         source: "hillers-expedition-route",
         layout: {
+          "visibility": "none", // Hidden by default
           "line-join": "round",
           "line-cap": "round"
         },
@@ -590,6 +592,9 @@ camera: {
         id: "expedition-points",
         type: "circle",
         source: "expedition-points",
+        layout: {
+          "visibility": "none" // Hidden by default
+        },
         paint: {
           "circle-radius": 10,
           "circle-color": [
@@ -611,6 +616,7 @@ camera: {
         type: "symbol",
         source: "expedition-points",
         layout: {
+          "visibility": "none", // Hidden by default
           "text-field": ["get", "name"],
           "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"],
           "text-size": 14,
@@ -630,6 +636,9 @@ camera: {
         id: "origin-destination-markers",
         type: "circle",
         source: "origin-destination-points",
+        layout: {
+          "visibility": "none" // Hidden by default
+        },
         paint: {
           "circle-radius": 12,
           "circle-color": [
@@ -652,6 +661,7 @@ camera: {
         type: "symbol",
         source: "origin-destination-points",
         layout: {
+          "visibility": "none", // Hidden by default
           "text-field": ["get", "name"],
           "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
           "text-size": 16,
@@ -673,6 +683,9 @@ camera: {
         id: "general-photo-markers",
         type: "circle",
         source: "general-image-locations",
+        layout: {
+          "visibility": "none" // Hidden by default
+        },
         paint: {
           "circle-radius": 10,
           "circle-color": "hsl(30, 100%, 50%)",
@@ -688,6 +701,7 @@ camera: {
         type: "symbol",
         source: "general-image-locations",
         layout: {
+          "visibility": "none", // Hidden by default
           "text-field": ["get", "name"],
           "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"],
           "text-size": 14,
@@ -708,6 +722,7 @@ camera: {
         type: "line",
         source: "chicago-route", // Use the dedicated source we created
         layout: {
+          "visibility": "none", // Hidden by default
           "line-join": "round",
           "line-cap": "round"
         },
@@ -776,12 +791,17 @@ camera: {
   useEffect(() => {
     if (mapInstance) {
       const markerLayers = [
+        // Markers and labels
         "expedition-points",
         "expedition-point-labels",
         "origin-destination-markers",
         "origin-destination-labels",
         "general-photo-markers",
-        "general-photo-labels"
+        "general-photo-labels",
+        // Routes
+        "jackson-expedition-route-line",
+        "hillers-expedition-route-line",
+        "chicago-to-arizona-line"
       ];
       
       // Set visibility for each marker layer
@@ -820,7 +840,9 @@ camera: {
           touchZoom: true,
           touchRotate: true,
           doubleClickZoom: true,
-          keyboard: true
+          keyboard: true,
+          maxPitch: 89,
+          minPitch: 0
         }}
         onViewStateChange={(params) => {
           // Simple passthrough of view state changes

@@ -26,6 +26,7 @@
     "@luma.gl/webgl": "^9.1.7",
     "@turf/turf": "^7.2.0",
     "@use-gesture/react": "^10.3.1",
+    "d3-force": "^3.0.0",
     "d3-scale": "^4.0.2",
     "mapbox-gl": "^2.13.0",
     "react": "^18.3.1",

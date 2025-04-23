@@ -6,7 +6,8 @@ export function useViewState() {
     zoom: 5.51,
     pitch: 32.91,
     bearing: -1.48,
-    maxPitch: 85,
+    maxPitch: 89, // Increased from 85 to allow almost first-person view
+    minPitch: 0,
     minZoom: 1,
     maxZoom: 20
     // Removed transitionDuration to avoid conflicts with FlyToInterpolator

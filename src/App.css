@@ -46,3 +46,32 @@ html, body, #root {
   height: 100%;
   position: relative;
 }
+
+/* Photo Labels */
+.photo-labels-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+
+.photo-labels-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.photo-labels-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.photo-labels-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 6px;
+}
+
+.photo-label {
+  transition: all 0.3s ease;
+}
+
+.photo-label:hover {
+  transform: translateX(-5px) !important;
+  opacity: 1 !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}

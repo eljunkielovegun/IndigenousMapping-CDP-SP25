@@ -22,17 +22,24 @@ export function useGestureHandlers(setViewState, setSelectedPhotoId, setShowInfo
     const transitionDuration = 3000;
     const fadeInDuration = 300;
     
-    // First make panel visible (but transparent)
-    if (setShowInfoPanel) {
-      setShowInfoPanel(true);
-    }
+    // Get the current view state to check zoom level
+    const currentViewState = window.deckInstance?.deck?.viewState || {};
+    const currentZoom = currentViewState.zoom || 0;
     
-    // Start the fade-in so it completes at the same time as the transition
-    setTimeout(() => {
-      if (setInfoPanelOpacity) {
-        setInfoPanelOpacity(1); // Start fade-in animation
+    // Only show the info panel if we're going back to a zoomed-out view (zoom < 7.5)
+    if (homeViewState.zoom < 7.5) {
+      // First make panel visible (but transparent)
+      if (setShowInfoPanel) {
+        setShowInfoPanel(true);
       }
-    }, transitionDuration - fadeInDuration); // Sync the end of fade with end of transition
+      
+      // Start the fade-in so it completes at the same time as the transition
+      setTimeout(() => {
+        if (setInfoPanelOpacity) {
+          setInfoPanelOpacity(1); // Start fade-in animation
+        }
+      }, transitionDuration - fadeInDuration); // Sync the end of fade with end of transition
+    }
     
     // Return to the initial view state with a smooth transition
     setViewState({
