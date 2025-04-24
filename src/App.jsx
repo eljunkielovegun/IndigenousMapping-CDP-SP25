@@ -419,12 +419,50 @@ export default function App() {
   
   // Function to exit Story mode and return to home view
   const exitStoryMode = useCallback(() => {
-    // Clear the active element
+    // Clear the story-specific states
     setActiveElement(null);
+    setStoryType(null);
+    setAppMode(APP_MODES.HOME);
     
-    // Simply use the existing returnToHomeView function
-    returnToHomeView();
-  }, [returnToHomeView]);
+    // Show all territories
+    setTerritoriesVisible({
+      navajo: true,
+      hopi: true,
+      zuni: true,
+      others: false
+    });
+    
+    // Reset all UI element styles (undo direct DOM manipulations from story mode)
+    document.querySelectorAll('.category-item').forEach(el => {
+      el.style.opacity = '1';
+      el.style.transition = 'all 0.3s';
+      el.style.transform = 'translateX(0)';
+      el.style.fontSize = '';
+      el.style.pointerEvents = 'auto';
+    });
+    
+    // Show main title and subtitle
+    const mainTitle = document.querySelector('.main-title');
+    if (mainTitle) {
+      mainTitle.style.opacity = '1';
+      mainTitle.style.transition = 'opacity 0.5s ease-out';
+    }
+    
+    const subtitle = document.querySelector('.main-title + h2');
+    if (subtitle) {
+      subtitle.style.opacity = '1';
+      subtitle.style.transition = 'opacity 0.5s ease-out';
+    }
+    
+    // Show category titles
+    document.querySelectorAll('.category-title').forEach(el => {
+      el.style.opacity = '1';
+      el.style.transition = 'opacity 0.5s ease-out';
+    });
+    
+    // Use the goToHomeView function from gesture handlers
+    goToHomeView();
+  }, [goToHomeView, APP_MODES.HOME]);
   
   // We've removed the manual keyboard controls since we re-enabled the DeckGL controller
   
@@ -962,6 +1000,7 @@ export default function App() {
           }}>
             Explore the Jackson-Hillers photographs situated in original Indigenous territories and their history.
           </h2>
+          
         </div>
       )}
       
@@ -1314,21 +1353,24 @@ export default function App() {
         </div>
       )}
       
-      {/* Display selected photo info - visible based on proximity and zoom level */}
+      {/* Display selected photo info with same positioning */}
       {selectedPhoto && showInfoPanel && (
-        <div style={{ 
-          position: 'absolute', 
-          top: 10, 
-          right: 10, 
-          zIndex: 10, 
+        <div id="photo-info-panel" style={{ 
+          position: 'fixed', 
+          top: '7vw', 
+          left: '7vw', 
+          right: 'auto',
+          bottom: 'auto',
+          zIndex: 999, 
           background: 'rgba(255, 255, 255, 0.95)', 
           padding: '12px', 
           borderRadius: '6px',
-          width: '450px', // Increased fixed width
+          width: '400px',
           boxShadow: '0 2px 15px rgba(0,0,0,0.4)',
-          maxHeight: '90vh',
+          maxHeight: '80vh',
           overflowY: 'auto',
-          animation: 'fadeIn 500ms ease-in-out forwards'
+          transform: 'none',
+          margin: 0
         }}>
           {/* Close button */}
           <div style={{ position: 'absolute', top: '5px', right: '5px' }}>
@@ -1349,12 +1391,12 @@ export default function App() {
             </button>
           </div>
           
-          {/* Photo preview - much larger now */}
+          {/* Photo preview at 2x size */}
           <div style={{ 
             border: '1px solid #ddd', 
             borderRadius: '4px',
             overflow: 'hidden',
-            maxHeight: '500px', // Doubled height
+            maxHeight: '600px', // Doubled height but panel size stays the same
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -1368,13 +1410,13 @@ export default function App() {
               alt={selectedPhoto.name}
               style={{ 
                 maxWidth: '100%', 
-                maxHeight: '500px', // Doubled height
+                maxHeight: '600px', // 2x height
                 objectFit: 'contain'
               }}
             />
           </div>
           
-          {/* More efficient text layout - title and info side by side */}
+          {/* Text layout - normal size */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
             <div style={{ flex: '1' }}>
               <h3 className="aldine-bold" style={{ margin: '0 0 2px 0', fontSize: '18px' }}>{selectedPhoto.name}</h3>
@@ -1392,12 +1434,12 @@ export default function App() {
             </div>
           </div>
           
-          {/* Description */}
+          {/* Description - normal size */}
           <p className="aldine-text" style={{ margin: '0 0 10px 0', fontSize: '14px', lineHeight: '1.4' }}>
             {selectedPhoto.description}
           </p>
           
-          {/* Location context in smaller text */}
+          {/* Location context - normal size */}
           <div style={{ 
             fontSize: '12px', 
             color: '#666', 
@@ -1432,6 +1474,50 @@ export default function App() {
 
       {/* Display tribal information when in story mode */}
       <TribalInfoPanel />
+      
+      {/* Map Legend - Middle Right Position */}
+      {effectiveViewState.zoom < 7.5 && !activeElement && (
+        <div className="aldine-regular" style={{
+          position: 'absolute',
+          top: '50%',
+          right: '30px',
+          transform: 'translateY(-50%)',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          borderRadius: '6px',
+          padding: '15px',
+          width: 'fit-content',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          zIndex: 10
+        }}>
+          <div style={{ fontSize: '1.3rem', marginBottom: '12px', color: 'white', fontWeight: '500' }}>Map Markers</div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Hillers Photos */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'rgb(75, 144, 226)', boxShadow: '0 0 4px rgba(0,0,0,0.3)' }}></div>
+              <span style={{ color: 'white', fontSize: '1rem' }}>Hillers Photos</span>
+            </div>
+            
+            {/* Jackson Photos */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'rgb(255, 87, 51)', boxShadow: '0 0 4px rgba(0,0,0,0.3)' }}></div>
+              <span style={{ color: 'white', fontSize: '1rem' }}>Jackson Photos</span>
+            </div>
+            
+            {/* Landmarks */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'rgb(255, 200, 80)', boxShadow: '0 0 4px rgba(0,0,0,0.3)' }}></div>
+              <span style={{ color: 'white', fontSize: '1rem' }}>Landmarks</span>
+            </div>
+            
+            {/* Expedition Locations */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'rgb(128, 90, 180)', boxShadow: '0 0 4px rgba(0,0,0,0.3)' }}></div>
+              <span style={{ color: 'white', fontSize: '1rem' }}>Expeditions</span>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </AppContext.Provider>
   );
