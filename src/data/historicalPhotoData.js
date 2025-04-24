@@ -730,7 +730,7 @@ export const historicalPhotos = {
   "nevada": {
     id: "nevada",
     name: "Nevada",
-    photographer: "Hillers",
+    photographer: "",
     year: "1873",
     catalog_ref: "null",
     description: "Nevada",
@@ -766,7 +766,7 @@ export const historicalPhotos = {
   "arizona": {
     id: "arizona",
     name: "Arizona",
-    photographer: "Hillers",
+    photographer: "",
     year: "1873, 1881",
     catalog_ref: "null",
     description: "Arizona",
@@ -802,7 +802,7 @@ export const historicalPhotos = {
   "utah": {
     id: "utah",
     name: "Utah",
-    photographer: "Hillers",
+    photographer: "",
     year: "1874",
     catalog_ref: "null",
     description: "Utah",
@@ -983,7 +983,7 @@ export const historicalPhotos = {
   "central-mexico": {
     id: "central-mexico",
     name: "Central Mexico",
-    photographer: "Hillers",
+    photographer: "",
     year: "1880-1907",
     catalog_ref: "null",
     description: "Central Mexico",

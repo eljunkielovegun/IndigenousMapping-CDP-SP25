@@ -1,0 +1,92 @@
+.info-box {
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  width: 380px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  background-color: rgba(10, 10, 10, 0.85);
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  font-family: 'Aldine', serif;
+  padding: 0;
+  backdrop-filter: blur(5px);
+}
+
+.info-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-box-header h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.close-button:hover {
+  opacity: 1;
+}
+
+.info-box-content {
+  padding: 20px;
+}
+
+.info-section {
+  margin-bottom: 25px;
+}
+
+.info-section h3 {
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.info-section h3:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 60px;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.section-content p {
+  margin-bottom: 15px;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  text-align: justify;
+}
+
+/* Scrollbar styling */
+.info-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.info-box::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.info-box::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}

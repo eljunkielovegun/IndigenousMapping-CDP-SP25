@@ -1,0 +1,101 @@
+{
+  "hash": "b1a63630",
+  "browserHash": "ea92d88a",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "cc3d3f18",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "ae110982",
+      "needsInterop": true
+    },
+    "@deck.gl/layers": {
+      "src": "../../node_modules/@deck.gl/layers/dist/index.js",
+      "file": "@deck__gl_layers.js",
+      "fileHash": "2fadfedf",
+      "needsInterop": false
+    },
+    "@deck.gl/core": {
+      "src": "../../node_modules/@deck.gl/core/dist/index.js",
+      "file": "@deck__gl_core.js",
+      "fileHash": "62b00ad2",
+      "needsInterop": false
+    },
+    "@use-gesture/react": {
+      "src": "../../node_modules/@use-gesture/react/dist/use-gesture-react.esm.js",
+      "file": "@use-gesture_react.js",
+      "fileHash": "f2921c51",
+      "needsInterop": false
+    },
+    "@loaders.gl/core": {
+      "src": "../../node_modules/@loaders.gl/core/dist/index.js",
+      "file": "@loaders__gl_core.js",
+      "fileHash": "b1af024b",
+      "needsInterop": false
+    },
+    "@loaders.gl/images": {
+      "src": "../../node_modules/@loaders.gl/images/dist/index.js",
+      "file": "@loaders__gl_images.js",
+      "fileHash": "e35c84e6",
+      "needsInterop": false
+    },
+    "@math.gl/core": {
+      "src": "../../node_modules/@math.gl/core/dist/index.js",
+      "file": "@math__gl_core.js",
+      "fileHash": "b349d1ac",
+      "needsInterop": false
+    },
+    "@deck.gl/react": {
+      "src": "../../node_modules/@deck.gl/react/dist/index.js",
+      "file": "@deck__gl_react.js",
+      "fileHash": "eb9e1b85",
+      "needsInterop": false
+    },
+    "react-map-gl": {
+      "src": "../../node_modules/react-map-gl/dist/esm/index.js",
+      "file": "react-map-gl.js",
+      "fileHash": "d9ff2d5f",
+      "needsInterop": false
+    },
+    "d3-force": {
+      "src": "../../node_modules/d3-force/src/index.js",
+      "file": "d3-force.js",
+      "fileHash": "b18a99f3",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "mapbox-gl-P6FEFXHD": {
+      "file": "mapbox-gl-P6FEFXHD.js"
+    },
+    "chunk-PS64ZXBB": {
+      "file": "chunk-PS64ZXBB.js"
+    },
+    "chunk-DXTH26DK": {
+      "file": "chunk-DXTH26DK.js"
+    },
+    "chunk-MA2WHGMY": {
+      "file": "chunk-MA2WHGMY.js"
+    },
+    "chunk-OLZ5K375": {
+      "file": "chunk-OLZ5K375.js"
+    },
+    "chunk-ZWAWRCH2": {
+      "file": "chunk-ZWAWRCH2.js"
+    },
+    "chunk-FD5OM2JI": {
+      "file": "chunk-FD5OM2JI.js"
+    },
+    "chunk-RRWRXYOZ": {
+      "file": "chunk-RRWRXYOZ.js"
+    },
+    "chunk-ZC22LKFR": {
+      "file": "chunk-ZC22LKFR.js"
+    }
+  }
+}

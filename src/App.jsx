@@ -10,6 +10,7 @@ import { getPhotoById, getAllPhotos } from './data/historicalPhotoData';
 import { useViewState, HOME_VIEW_STATE } from './hooks/deck/useViewState';
 import { useGestureHandlers } from './hooks/useGestureHandlers';
 import { MAPBOX_TOKEN } from './config/mapbox';
+import TribalInfoPanel from './components/UI/TribalInfoPanel';
 
 import { getAssetPath } from './utils/assetUtils';
 
@@ -1410,6 +1411,9 @@ export default function App() {
         showMapboxMarkers={showMapboxMarkers}
         deckRef={deckRef}
       />
+
+      {/* Display tribal information when in story mode */}
+      <TribalInfoPanel />
       </div>
     </AppContext.Provider>
   );
