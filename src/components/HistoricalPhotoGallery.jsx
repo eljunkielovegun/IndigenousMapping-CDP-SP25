@@ -35,20 +35,35 @@ export default function HistoricalPhotoGallery({ onSelectPhoto }) {
             }}
           >
             <div className="photo-thumbnail" style={{ height: '150px', overflow: 'hidden' }}>
-              <img 
-                src={photo.image_url} 
-                alt={photo.description} 
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/800x600/FF9900/FFFFFF?text=Image+Not+Found';
-                  e.target.alt = 'Image not available';
-                }}
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  objectFit: 'cover',
-                  transition: 'transform 0.3s'
-                }}
-              />
+              {photo.image_url && photo.image_url !== "null" ? (
+                <img 
+                  src={photo.image_url} 
+                  alt={photo.description} 
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/800x600/FF9900/FFFFFF?text=Image+Not+Found';
+                    e.target.alt = 'Image not available';
+                  }}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover',
+                    transition: 'transform 0.3s'
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#f0f0f0',
+                  color: '#888',
+                  fontStyle: 'italic'
+                }}>
+                  No image
+                </div>
+              )}
             </div>
             
             <div className="photo-info" style={{ padding: '12px' }}>

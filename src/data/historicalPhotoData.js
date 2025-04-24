@@ -727,41 +727,41 @@ export const historicalPhotos = {
     expedition_notes: "Part of Powell's exploration of the Grand Canyon region"
   },
   
-  "nevada": {
-    id: "nevada",
-    name: "Nevada",
-    photographer: "",
-    year: "1873",
-    catalog_ref: "null",
-    description: "Nevada",
-    coordinates: {
-      latitude: 39.773978,
-      longitude: -116.618156
-    },
-    elevation_feet: 15000,
-    elevation_meters: 4500,
-    camera: {
-      viewpoint: {
-        latitude: 39.7739,
-        longitude: -116.6181,
-        elevation: 6000
-      },
-      bearing: 210,      // Southwest view of mountain range
-      pitch: 5,          // Slightly upward to capture mountains
-      zoom: 12,          // Wide enough for landscape
-      fov: 65           // Wide field of view for landscape
-    },
-    overlay: {
-      opacity: 0.5,
-      bounds: [
-        [-116.6200, 39.7720],  // Southwest corner
-        [-116.6160, 39.7760]   // Northeast corner
-      ]
-    },
-    image_url: "null",
-    expedition: "Powell Expedition - Nevada (1873)",
-    expedition_notes: "Part of Powell's survey of Nevada, Utah, and Arizona regions"
-  },
+  // "nevada": {
+  //   id: "nevada",
+  //   name: "Nevada",
+  //   photographer: "",
+  //   year: "1873",
+  //   catalog_ref: "null",
+  //   description: "Nevada",
+  //   coordinates: {
+  //     latitude: 39.773978,
+  //     longitude: -116.618156
+  //   },
+  //   elevation_feet: 15000,
+  //   elevation_meters: 4500,
+  //   camera: {
+  //     viewpoint: {
+  //       latitude: 39.7739,
+  //       longitude: -116.6181,
+  //       elevation: 6000
+  //     },
+  //     bearing: 210,      // Southwest view of mountain range
+  //     pitch: 5,          // Slightly upward to capture mountains
+  //     zoom: 12,          // Wide enough for landscape
+  //     fov: 65           // Wide field of view for landscape
+  //   },
+  //   overlay: {
+  //     opacity: 0.5,
+  //     bounds: [
+  //       [-116.6200, 39.7720],  // Southwest corner
+  //       [-116.6160, 39.7760]   // Northeast corner
+  //     ]
+  //   },
+  //   image_url: "null",
+  //   expedition: "Powell Expedition - Nevada (1873)",
+  //   expedition_notes: "Part of Powell's survey of Nevada, Utah, and Arizona regions"
+  // },
   
   "arizona": {
     id: "arizona",
@@ -814,14 +814,14 @@ export const historicalPhotos = {
     elevation_meters: 3600,
     camera: {
       viewpoint: {
-        latitude: 39.2407,
-        longitude: -111.7498,
-        elevation: 6000
+        latitude: 39.238253,
+        longitude: -111.741638,
+        elevation: 0 // Set appropriate elevation
       },
-      bearing: 180,      // South-facing view
-      pitch: 0,          // Level view
-      zoom: 13,          // General landscape view
-      fov: 60           // Standard field of view
+      bearing: -8.53,
+      pitch: 74.17,
+      zoom: 13.58,
+      fov: 60 // Standard field of view
     },
     overlay: {
       opacity: 0.5,

@@ -1464,29 +1464,40 @@ export default function App() {
             background: '#f5f5f5',
             margin: '0 0 10px 0'
           }}>
-            <img 
-              src={selectedPhoto.image_url.startsWith('http') 
-                ? selectedPhoto.image_url
-                : getAssetPath(selectedPhoto.image_url.replace(/^\//,''))} 
-              alt={selectedPhoto.name}
-              style={{ 
-                maxWidth: '100%', 
-                maxHeight: '600px', // 2x height
-                objectFit: 'contain'
-              }}
-            />
+            {selectedPhoto.image_url && selectedPhoto.image_url !== "null" ? (
+              <img 
+                src={selectedPhoto.image_url.startsWith('http') 
+                  ? selectedPhoto.image_url
+                  : getAssetPath(selectedPhoto.image_url.replace(/^\//,''))} 
+                alt={selectedPhoto.name}
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '600px', // 2x height
+                  objectFit: 'contain'
+                }}
+              />
+            ) : (
+              <div style={{
+                padding: '20px',
+                textAlign: 'center',
+                color: '#888',
+                fontStyle: 'italic'
+              }}>
+                No image available
+              </div>
+            )}
           </div>
           
-          {/* Text layout - normal size */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+          {/* Text layout - larger size */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
             <div style={{ flex: '1' }}>
-              <h3 className="aldine-bold" style={{ margin: '0 0 2px 0', fontSize: '18px' }}>{selectedPhoto.name}</h3>
-              <p className="aldine-text" style={{ margin: '0', fontSize: '14px', color: selectedPhoto.photographer === 'Jackson' ? '#c43e1c' : '#2761ac' }}>
+              <h3 className="aldine-bold" style={{ margin: '0 0 4px 0', fontSize: '22px' }}>{selectedPhoto.name}</h3>
+              <p className="aldine-text" style={{ margin: '0', fontSize: '16px', color: selectedPhoto.photographer === 'Jackson' ? '#c43e1c' : '#2761ac' }}>
                 {selectedPhoto.photographer}, {selectedPhoto.year}
               </p>
             </div>
-            <div style={{ flex: '1', textAlign: 'right', fontSize: '12px', color: '#555' }}>
-              <p style={{ margin: '0' }}>
+            <div style={{ flex: '1', textAlign: 'right', fontSize: '14px', color: '#555' }}>
+              <p style={{ margin: '0', fontWeight: 'bold' }}>
                 {selectedPhoto.photographer === 'Jackson' ? 'Western US Geological Survey' : 'Bureau of American Ethnology'}
               </p>
               <p style={{ margin: '0', fontStyle: 'italic' }}>
@@ -1495,27 +1506,42 @@ export default function App() {
             </div>
           </div>
           
-          {/* Description - normal size */}
-          <p className="aldine-text" style={{ margin: '0 0 10px 0', fontSize: '14px', lineHeight: '1.4' }}>
+          {/* Description - larger size */}
+          <p className="aldine-text" style={{ margin: '0 0 15px 0', fontSize: '16px', lineHeight: '1.5' }}>
             {selectedPhoto.description}
           </p>
           
-          {/* Location context - normal size */}
-          <div style={{ 
-            fontSize: '12px', 
-            color: '#666', 
-            marginTop: '8px', 
-            padding: '6px', 
-            background: 'rgba(0,0,0,0.03)', 
-            borderRadius: '4px' 
-          }}>
-            <p style={{ margin: '0', fontStyle: 'italic' }}>
-              Indigenous territories documentary photography - 
-              {selectedPhoto.photographer === 'Jackson' 
-                ? ' Part of early extensive photographic expeditions documenting the Southwest.' 
-                : ' Some of the earliest photographic record of traditional Pueblo life.'}
-            </p>
-          </div>
+          {/* Expedition information - larger font size */}
+          {selectedPhoto.expedition && selectedPhoto.expedition !== "null" && (
+            <div style={{ 
+              marginTop: '15px', 
+              padding: '10px', 
+              background: 'rgba(0,0,0,0.05)', 
+              borderRadius: '6px',
+              border: '1px solid rgba(0,0,0,0.1)'
+            }}>
+              <h4 style={{ 
+                margin: '0 0 8px 0', 
+                fontSize: '18px', 
+                color: '#333',
+                fontWeight: 'bold' 
+              }}>
+                Expedition: {selectedPhoto.expedition}
+              </h4>
+              
+              {selectedPhoto.expedition_notes && selectedPhoto.expedition_notes !== "null" && (
+                <p style={{ 
+                  margin: '8px 0 0 0', 
+                  fontSize: '15px', 
+                  fontStyle: 'italic', 
+                  color: '#444', 
+                  lineHeight: '1.5' 
+                }}>
+                  {selectedPhoto.expedition_notes}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
       

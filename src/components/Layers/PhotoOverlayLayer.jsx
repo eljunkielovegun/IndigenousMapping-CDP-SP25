@@ -13,8 +13,14 @@ import { getAssetPath } from '../../utils/assetUtils';
  * @returns {Promise<BitmapLayer|null>} A promise that resolves to a BitmapLayer or null if loading fails
  */
 export async function createPhotoOverlayLayer(photoData, opacity = 0.5) {
-  if (!photoData || !photoData.image_url || !photoData.overlay.bounds) {
+  if (!photoData || !photoData.overlay.bounds) {
     console.error('Invalid photo data provided', photoData);
+    return null;
+  }
+  
+  // Check if there's a valid image URL
+  if (!photoData.image_url || photoData.image_url === "null") {
+    console.warn(`No valid image URL for photo ${photoData.id}`);
     return null;
   }
 
@@ -51,6 +57,12 @@ export async function createPhotoOverlayLayer(photoData, opacity = 0.5) {
 export function createPhotoOverlayLayerSync(photoData, opacity = 0.5, onImageLoaded = null) {
   if (!photoData || !photoData.overlay.bounds) {
     console.error('Invalid photo data provided', photoData);
+    return null;
+  }
+  
+  // Check if there's a valid image URL
+  if (!photoData.image_url || photoData.image_url === "null") {
+    console.warn(`No valid image URL for photo ${photoData.id}`);
     return null;
   }
   
