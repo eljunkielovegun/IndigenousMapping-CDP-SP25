@@ -73,7 +73,7 @@ export default function App() {
   const [showMapboxMarkers, setShowMapboxMarkers] = useState(false); // Always start with Mapbox markers hidden
   const [showInfoPanel, setShowInfoPanel] = useState(true); // Control visibility of info panel
   const [infoPanelOpacity, setInfoPanelOpacity] = useState(1); // Control the opacity for fade effect
-  const [showLabels, setShowLabels] = useState(false); // Control visibility of photo labels (hidden by default)
+  const [showLabels, setShowLabels] = useState(false); // Hide labels by default (only show in specific views)
   const [labelColumns, setLabelColumns] = useState(2); // Number of columns for label display (default: 2 columns)
   const [groupLabelsByPhotographer, setGroupLabelsByPhotographer] = useState(true); // Group labels by photographer (enabled by default)
   const [showLabelConnectors, setShowLabelConnectors] = useState(false); // Show connector lines from labels to markers (disabled by default)
@@ -231,6 +231,9 @@ export default function App() {
     // Clear any active element
     setActiveElement(null);
     
+    // Hide labels in home view
+    setShowLabels(false);
+    
     // Show territories
     setTerritoriesVisible({
       navajo: true,
@@ -376,8 +379,25 @@ export default function App() {
       // Default for story mode is a slightly elevated view
       zoom: 7.5,
       pitch: 40,
-      bearing: 0,
-      ...startingLocation // Override with any provided location params
+      bearing: 0
+    };
+    
+    // Custom locations for specific story types
+    if (type === 'HILLERS') {
+      storyLocation = {
+        longitude: -109.948693,
+        latitude: 35.332032,
+        zoom: 8.74,
+        pitch: 51.55,
+        bearing: -19.10,
+        fov: 60
+      };
+    }
+    
+    // Override with any provided location params
+    storyLocation = {
+      ...storyLocation,
+      ...startingLocation
     };
     
     // Set view state with smooth transition
@@ -545,6 +565,8 @@ export default function App() {
     return null;
   };
   
+  // Photo marker label positions are defined directly in the PhotoMarkersLayer component
+
   // Create the photo markers layer and photo overlay if a photo is selected
   const layers = useMemo(() => {
     // Get the base markers layer with photographer filtering
@@ -556,8 +578,9 @@ export default function App() {
       showLabels: showLabels,
       zoomLevel: effectiveViewState.zoom,
       // Add photographer filtering
+      // This controls which photographer's photos are shown in the story views
       filterPhotographer: activeElement === 'HILLERS' ? "Hillers" : 
-                         activeElement === 'JACKSON' ? "Jackson" : null
+                          activeElement === 'JACKSON' ? "Jackson" : null
     });
     
     // Initialize our layer list with the markers layer
@@ -702,14 +725,12 @@ export default function App() {
       )}
       
       {/* Connector lines now handled by DeckGL layers */}
-      {/* HTML container for photo labels */}
-      {showLabels && (
-        <>
-          {/* Side panel labels (shown only when in photographer story mode) */}
-          {(activeElement === 'HILLERS' || activeElement === 'JACKSON') && (
-            <div 
-              className="photo-labels-container"
-              style={{
+      {/* HTML container for photo labels - now always shown */}
+      {/* Side panel labels (shown only when in photographer story mode) */}
+      {(activeElement === 'HILLERS' || activeElement === 'JACKSON') && (
+          <div 
+            className="photo-labels-container"
+            style={{
                 position: 'absolute',
                 top: activeElement === 'HILLERS' ? 'calc(5vw + 4rem)' : activeElement === 'JACKSON' ? 'calc(6vw + 7rem)' : '15vh', // Position lower beneath the specific photographer name
                 right: '20px',
@@ -770,24 +791,16 @@ export default function App() {
                           (label.photographer === 'Jackson' ? '3px solid rgb(255, 87, 51)' : '3px solid rgb(75, 144, 226)') : 
                           '3px solid transparent',
                         textShadow: '0px 0px 8px rgba(0,0,0,1), 0px 0px 4px #000, 0px 0px 2px #000' // Even darker drop shadow
-                      }}
-                      onClick={() => handlePhotoSelect(label.id)}
-                    >
-                      {label.label}
+                        }}
+                        onClick={() => handlePhotoSelect(label.id)}
+                      >
+                        {label.label}
+                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {/* Marker labels are now handled directly by DeckGL TextLayer:
-              - When zoom level is between 7.5 and 12, labels shown with larger offset
-              - When zoom level is >= 12, labels shown right next to markers
-          */}
-        </>
-      )}
-      {/* Flat Mini-map for returning to the initial view - hidden when at home view */}
+                    ))}
+                  </div>
+                  )}
       {(effectiveViewState.longitude !== HOME_VIEW_STATE.longitude || 
         effectiveViewState.latitude !== HOME_VIEW_STATE.latitude || 
         effectiveViewState.zoom !== HOME_VIEW_STATE.zoom) && (
@@ -796,7 +809,16 @@ export default function App() {
           style={{
             position: 'absolute',
             bottom: '5vw',
-            right: '5vw',
+            ...(activeElement === 'HILLERS' || activeElement === 'JACKSON' 
+              ? {
+                  // Center position for Hillers and Jackson story views
+                  left: '50%',
+                  transform: 'translateX(-50%)'
+                } 
+              : {
+                  // Bottom right for home view
+                  right: '5vw'
+                }),
             zIndex: 15,
             background: 'transparent',
             border: 'none',
@@ -1120,14 +1142,37 @@ export default function App() {
               // Toggle behavior - if already active, deactivate
               if (activeElement === 'HILLERS') {
                 // Exit active state
-                setShowLabels(false);
                 setActiveElement(null);
+                // Hide labels
+                setShowLabels(false);
+                // Return to home view
+                setViewState({
+                  ...HOME_VIEW_STATE,
+                  transitionDuration: 2000,
+                  transitionInterpolator: new FlyToInterpolator({
+                    speed: 1.2, curve: 1.5, screenSpeed: 15
+                  })
+                });
               } else {
                 // Enter active state for Hillers
-                setShowLabels(true);
                 setActiveElement('HILLERS');
+                // Show labels
+                setShowLabels(true);
+                // Apply custom camera position
+                setViewState({
+                  longitude: -109.948693,
+                  latitude: 35.332032,
+                  zoom: 8.74,
+                  pitch: 51.55,
+                  bearing: -19.10,
+                  fov: 60,
+                  transitionDuration: 2500,
+                  transitionInterpolator: new FlyToInterpolator({
+                    speed: 1.2, curve: 1.5, screenSpeed: 15
+                  })
+                });
               }
-              // Always stay in home view
+              // Stay in home view mode
               setAppMode(APP_MODES.HOME);
             }}
             >
@@ -1150,14 +1195,37 @@ export default function App() {
               // Toggle behavior - if already active, deactivate
               if (activeElement === 'JACKSON') {
                 // Exit active state
-                setShowLabels(false);
                 setActiveElement(null);
+                // Hide labels
+                setShowLabels(false);
+                // Return to home view
+                setViewState({
+                  ...HOME_VIEW_STATE,
+                  transitionDuration: 2000,
+                  transitionInterpolator: new FlyToInterpolator({
+                    speed: 1.2, curve: 1.5, screenSpeed: 15
+                  })
+                });
               } else {
                 // Enter active state for Jackson
-                setShowLabels(true);
                 setActiveElement('JACKSON');
+                // Show labels
+                setShowLabels(true);
+                // Apply custom camera position for Jackson
+                setViewState({
+                  longitude: -107.888988,
+                  latitude: 39.093789,
+                  zoom: 7.66,
+                  pitch: 64.22,
+                  bearing: -26.51,
+                  fov: 60,
+                  transitionDuration: 2500,
+                  transitionInterpolator: new FlyToInterpolator({
+                    speed: 1.2, curve: 1.5, screenSpeed: 15
+                  })
+                });
               }
-              // Always stay in home view
+              // Stay in home view mode
               setAppMode(APP_MODES.HOME);
             }}
             >

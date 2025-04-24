@@ -431,10 +431,10 @@ class PhotoMarkersCompositeLayer extends CompositeLayer {
       onHover: this.onHover.bind(this)
     }));
     
-    // Label text layer - only show when zoom level is high enough
+    // Label text layer - only show when zoom level is high enough AND showLabels is true
     // When zoom >= 12, place labels directly next to markers
     let textLayer = null;
-    if (zoomLevel >= 7.5) {
+    if (this.props.showLabels) {
       textLayer = new TextLayer(this.getSubLayerProps({
         id: 'marker-text-labels',
         data,
@@ -449,12 +449,57 @@ class PhotoMarkersCompositeLayer extends CompositeLayer {
           return [d.coordinates.longitude + 0.03, d.coordinates.latitude];
         },
         getText: d => d.name,
-        getSize: 12,
+        getSize: 16, // Increased font size
         getAngle: 0,
         getTextAnchor: 'start',
         getAlignmentBaseline: 'center',
-        // Adjust pixel offset based on zoom level
-        getPixelOffset: d => zoomLevel >= 12 ? [45, 0] : [25, 0], // 10px offset when zoomed in
+        // Adjust pixel offset based on photo ID
+        getPixelOffset: d => {
+          // Custom offsets for all photos in historical data
+          const offsetMap = {
+            // All actual photo IDs from historicalPhotoData.js with unique offsets
+            'omaha-nebraska': [40, -30],
+            'mystic-lake': [60, -30],
+            'gallatin-headwaters': [-320, 5],
+            'mammoth-hot-springs': [60, 0],
+            'yellowstone-falls': [0, 30],
+            'holy-cross': [20, -10],
+            'mancos-canyon-1': [30, 0],
+            'mancos-canyon-2': [-20, 30],
+            'window-rock': [-50, -15],
+            'chaco-canyon': [55, 30],
+            'monument-valley': [-40, -35],
+            'canyon-de-chelly': [30, -45],
+            'salt-lake-city-1875': [50, 15],
+            'walpi-pueblo-1': [-30, -50],
+            'walpi-pueblo-2': [-30, 40],
+            'walpi-pueblo-3': [-30, 80],
+            'walpi-pueblo-4': [-30, 120],
+            'montezuma-canyon': [-50, -40],
+            'walpi-pueblo-5': [-30,160],
+            'grand-canyon': [-30, 35],
+            'nevada': [55, -20],
+            'arizona': [-45, 25],
+            'utah': [35, -40],
+            'colorado-river-grand-junction': [-25, -40],
+            'indian-territory-oklahoma': [50, -35],
+            'zuni-eagle': [-40, 20],
+            'navajo-joganda': [30, -25],
+            'central-mexico': [-50, 30]
+          };
+          
+          // Use custom offset if defined, otherwise use a pseudo-random offset based on ID
+          if (offsetMap[d.id]) {
+            return offsetMap[d.id];
+          } else {
+            // Generate a pseudo-random offset based on the photo id string
+            const idSum = (d.id || '').split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+            const xOffset = ((idSum % 7) - 3) * 25; // Range: -75 to 75 in steps of 25
+            const yOffset = ((idSum % 5) - 2) * 20; // Range: -40 to 40 in steps of 20
+            
+            return [xOffset, yOffset];
+          }
+        },
         getColor: d => {
           if (d.photographer === "landmark") return [255, 255, 150, 255]; // Yellow tint for landmark
           if (d.photographer === "Jackson") return [255, 155, 132, 255]; // Red tint for Jackson
@@ -465,12 +510,12 @@ class PhotoMarkersCompositeLayer extends CompositeLayer {
         fontWeight: 'bold',
         background: true,
         getBorderColor: [0, 0, 0, 200],
-        getBorderWidth: 3,
-        backgroundPadding: [3, 3, 3, 3],
+        getBorderWidth: 4, // Increased border width
+        backgroundPadding: [5, 5, 5, 5], // Increased padding
         getBackgroundColor: [0, 0, 0, 180], // Semi-transparent black background
         wordBreak: 'break-word',
         billboard: true,
-        maxWidth: 200,
+        maxWidth: 250, // Increased max width for longer labels
         parameters: {
           depthTest: false
         },
