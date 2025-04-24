@@ -843,9 +843,8 @@ export default function App() {
                     ))}
                   </div>
                   )}
-      {(effectiveViewState.longitude !== HOME_VIEW_STATE.longitude || 
-        effectiveViewState.latitude !== HOME_VIEW_STATE.latitude || 
-        effectiveViewState.zoom !== HOME_VIEW_STATE.zoom) && (
+      {/* Always show mini-map */}
+      {true && (
         <div
           onClick={returnToHomeView}
           style={{
@@ -885,6 +884,22 @@ export default function App() {
           backgroundColor: 'transparent',
           overflow: 'hidden',
         }}>
+          {/* RETURN TO MAP text overlay */}
+          <div className="geographica-hand" style={{
+            position: 'absolute',
+            top: '5px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: 'white',
+            fontSize: '1.2rem',
+            textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 5px rgba(0,0,0,0.9)',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            zIndex: 3,
+            padding: '4px 8px'
+          }}>
+            RETURN TO MAP
+          </div>
         
         {/* Outer white border ring */}
         <div style={{
