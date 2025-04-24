@@ -11,12 +11,9 @@ const TribalInfoPanel = () => {
   const { appMode, storyType, STORY_TYPES, exitStoryMode } = useAppContext();
   
   // Determine which tribe to show based on active story type
-  console.log('Current story type:', storyType);
-  console.log('Available STORY_TYPES:', STORY_TYPES);
-  
   let tribeName = null;
   
-  // Use constants from STORY_TYPES instead of hardcoded strings
+  // Map story types to tribe names
   if (storyType === STORY_TYPES.DINE) tribeName = 'Diné';
   else if (storyType === STORY_TYPES.HOPI) tribeName = 'Hopi';
   else if (storyType === STORY_TYPES.ZUNI) tribeName = 'Zuni';
@@ -24,14 +21,8 @@ const TribalInfoPanel = () => {
   // Get tribal information based on selected tribe
   const tribeData = tribeName ? getIndigenousPeopleData(tribeName) : null;
   
-  console.log('Tribe name:', tribeName);
-  console.log('Retrieved tribe data:', tribeData);
-  
   // Don't render if not in story mode or no tribal data
-  if (!tribeData || !tribeName) {
-    console.log('Not rendering panel - missing data');
-    return null;
-  }
+  if (!tribeData || !tribeName) return null;
 
   return (
     <div className="tribal-info-panel">

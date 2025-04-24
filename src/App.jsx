@@ -279,6 +279,9 @@ export default function App() {
   
   // Function to enter Story mode - guided experience for a specific topic
   const enterStoryMode = useCallback((type, startingLocation = {}) => {
+    console.log('Entering story mode with type:', type);
+    console.log('Valid types:', STORY_TYPES);
+    
     if (!STORY_TYPES[type]) {
       console.error(`Invalid story type: ${type}`);
       return;
@@ -1010,21 +1013,26 @@ export default function App() {
                 pointerEvents: 'auto',
                 position: 'relative'
               }}>
-                <span className="geographica-hand category-item DINE-category" style={{ 
-                  color: 'white', 
-                  fontSize: activeElement === 'DINE' ? '5rem' : '3.5rem', 
-                  textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
-                  lineHeight: 1.1, 
-                  cursor: 'pointer', 
-                  transition: appMode === APP_MODES.STORY ? 
-                    (activeElement === 'DINE' ? 'all 0.6s ease-out' : 'none') : 
-                    'all 0.6s ease-out', 
-                  WebkitTapHighlightColor: 'transparent', 
-                  userSelect: 'none',
-                  opacity: activeElement && activeElement !== 'DINE' ? 0 : 1,
-                  transform: activeElement === 'DINE' ? 'translateX(2vw)' : 'translateX(0)'
-                }}
-                onClick={() => enterStoryMode('DINE')}
+                <span 
+                  className="geographica-hand category-item DINE-category" 
+                  style={{ 
+                    color: 'white', 
+                    fontSize: activeElement === 'DINE' ? '5rem' : '3.5rem', 
+                    textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+                    lineHeight: 1.1, 
+                    cursor: 'pointer', 
+                    transition: appMode === APP_MODES.STORY ? 
+                      (activeElement === 'DINE' ? 'all 0.6s ease-out' : 'none') : 
+                      'all 0.6s ease-out', 
+                    WebkitTapHighlightColor: 'transparent', 
+                    userSelect: 'none',
+                    opacity: activeElement && activeElement !== 'DINE' ? 0 : 1,
+                    transform: activeElement === 'DINE' ? 'translateX(2vw)' : 'translateX(0)'
+                  }}
+                  onClick={() => {
+                    console.log('DINE div clicked');
+                    enterStoryMode('DINE');
+                  }}
                 >
                   Diné
                 </span>
@@ -1036,21 +1044,26 @@ export default function App() {
                 pointerEvents: 'auto',
                 position: 'relative'
               }}>
-                <span className="geographica-hand category-item HOPI-category" style={{ 
-                  color: 'white', 
-                  fontSize: activeElement === 'HOPI' ? '5rem' : '3.5rem', 
-                  textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
-                  lineHeight: 1.1, 
-                  cursor: 'pointer', 
-                  transition: appMode === APP_MODES.STORY ? 
-                    (activeElement === 'HOPI' ? 'all 0.6s ease-out' : 'none') : 
-                    'all 0.6s ease-out', 
-                  WebkitTapHighlightColor: 'transparent', 
-                  userSelect: 'none',
-                  opacity: activeElement && activeElement !== 'HOPI' ? 0 : 1,
-                  transform: activeElement === 'HOPI' ? 'translateX(2vw)' : 'translateX(0)'
-                }}
-                onClick={() => enterStoryMode('HOPI')}
+                <span 
+                  className="geographica-hand category-item HOPI-category" 
+                  style={{ 
+                    color: 'white', 
+                    fontSize: activeElement === 'HOPI' ? '5rem' : '3.5rem', 
+                    textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+                    lineHeight: 1.1, 
+                    cursor: 'pointer', 
+                    transition: appMode === APP_MODES.STORY ? 
+                      (activeElement === 'HOPI' ? 'all 0.6s ease-out' : 'none') : 
+                      'all 0.6s ease-out', 
+                    WebkitTapHighlightColor: 'transparent', 
+                    userSelect: 'none',
+                    opacity: activeElement && activeElement !== 'HOPI' ? 0 : 1,
+                    transform: activeElement === 'HOPI' ? 'translateX(2vw)' : 'translateX(0)'
+                  }}
+                  onClick={() => {
+                    console.log('HOPI div clicked');
+                    enterStoryMode('HOPI');
+                  }}
                 >
                   Hopi
                 </span>
@@ -1062,21 +1075,26 @@ export default function App() {
                 pointerEvents: 'auto',
                 position: 'relative'
               }}>
-                <span className="geographica-hand category-item ZUNI-category" style={{ 
-                  color: 'white', 
-                  fontSize: activeElement === 'ZUNI' ? '5rem' : '3.5rem', 
-                  textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
-                  lineHeight: 1.1, 
-                  cursor: 'pointer', 
-                  transition: appMode === APP_MODES.STORY ? 
-                    (activeElement === 'ZUNI' ? 'all 0.6s ease-out' : 'none') : 
-                    'all 0.6s ease-out', 
-                  WebkitTapHighlightColor: 'transparent', 
-                  userSelect: 'none',
-                  opacity: activeElement && activeElement !== 'ZUNI' ? 0 : 1,
-                  transform: activeElement === 'ZUNI' ? 'translateX(2vw)' : 'translateX(0)'
-                }}
-                onClick={() => enterStoryMode('ZUNI')}
+                <span 
+                  className="geographica-hand category-item ZUNI-category" 
+                  style={{ 
+                    color: 'white', 
+                    fontSize: activeElement === 'ZUNI' ? '5rem' : '3.5rem', 
+                    textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+                    lineHeight: 1.1, 
+                    cursor: 'pointer', 
+                    transition: appMode === APP_MODES.STORY ? 
+                      (activeElement === 'ZUNI' ? 'all 0.6s ease-out' : 'none') : 
+                      'all 0.6s ease-out', 
+                    WebkitTapHighlightColor: 'transparent', 
+                    userSelect: 'none',
+                    opacity: activeElement && activeElement !== 'ZUNI' ? 0 : 1,
+                    transform: activeElement === 'ZUNI' ? 'translateX(2vw)' : 'translateX(0)'
+                  }}
+                  onClick={() => {
+                    console.log('ZUNI div clicked');
+                    enterStoryMode('ZUNI');
+                  }}
                 >
                   Zuni
                 </span>
@@ -1087,7 +1105,7 @@ export default function App() {
         </div>
       )}
       
-      {/* Photographers Section - only visible when zoomed out or when in respective story mode */}
+      {/* Photographers Section - only visible when zoomed out or when in respective story mode, hidden in tribal stories */}
       {(effectiveViewState.zoom < 7.5 || activeElement === 'HILLERS' || activeElement === 'JACKSON') && (
         <div style={{
           position: 'absolute', 
@@ -1096,7 +1114,7 @@ export default function App() {
           zIndex: 10, 
           maxWidth: '30vw', 
           background: 'transparent', 
-          opacity: 1, 
+          opacity: (activeElement === 'DINE' || activeElement === 'HOPI' || activeElement === 'ZUNI') ? 0 : 1, 
           transition: 'opacity 0.3s, maxWidth 0.3s', 
           pointerEvents: 'auto'
         }}>
