@@ -522,8 +522,6 @@ export default function App() {
     
     // Filter by photographer if in photographer story mode
     if (activeElement === 'HILLERS') {
-      // Debug log to see what data we have
-      console.log('Filtering for Hillers', organizedData.map(i => i.photographer));
       organizedData = organizedData.filter(item => item.photographer === "Hillers");
     } else if (activeElement === 'JACKSON') {
       organizedData = organizedData.filter(item => item.photographer === "Jackson");
