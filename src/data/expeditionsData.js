@@ -1,5 +1,5 @@
 // Organized data for William Henry Jackson and John K. Hillers
-const photographerData = {
+export const photographerData = {
     jackson: [
       {
         year: "1867-1869",
@@ -191,7 +191,7 @@ const photographerData = {
   };
   
   // Function to extract data by set name
-  function getPhotographerSet(setName) {
+  export function getPhotographerSet(setName) {
     if (setName.toLowerCase() === 'jackson') {
       return photographerData.jackson;
     } else if (setName.toLowerCase() === 'hillers') {
@@ -202,7 +202,7 @@ const photographerData = {
   }
   
   // Function to extract data by specific criteria
-  function extractData(setName, criteria, value) {
+  export function extractData(setName, criteria, value) {
     const dataset = getPhotographerSet(setName);
     
     if (!dataset) {

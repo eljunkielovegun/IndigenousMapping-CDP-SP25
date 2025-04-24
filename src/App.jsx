@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import './App.css';
 import MapboxStyleLoader from './components/DeckGL/MapboxStyleLoader';
 import createPhotoMarkersLayer from './components/Layers/PhotoMarkersLayer';
+import createExpeditionRouteLayer from './components/Layers/ExpeditionRouteLayer';
 import { createPhotoOverlayLayerSync } from './components/Layers/PhotoOverlayLayer';
 import { getPhotoById, getAllPhotos } from './data/historicalPhotoData';
 import { useViewState, HOME_VIEW_STATE } from './hooks/deck/useViewState';
@@ -78,6 +79,7 @@ export default function App() {
   const [labelColumns, setLabelColumns] = useState(2); // Number of columns for label display (default: 2 columns)
   const [groupLabelsByPhotographer, setGroupLabelsByPhotographer] = useState(true); // Group labels by photographer (enabled by default)
   const [showLabelConnectors, setShowLabelConnectors] = useState(false); // Show connector lines from labels to markers (disabled by default)
+  const [showExpeditionRoutes, setShowExpeditionRoutes] = useState(false); // Show expedition routes connecting markers
   
   // Photo adjustment controls
   const [offsetX, setOffsetX] = useState(0);
@@ -628,6 +630,37 @@ export default function App() {
     // Initialize our layer list with the markers layer
     const layerList = [markersLayer];
     
+    // Add expedition route layers if enabled
+    if (showExpeditionRoutes || activeElement === 'HILLERS' || activeElement === 'JACKSON') {
+      // For Hillers specific view
+      if (activeElement === 'HILLERS' || (showExpeditionRoutes && !activeElement)) {
+        const hillersRouteLayer = createExpeditionRouteLayer({
+          photographer: 'Hillers',
+          visible: true,
+          style: {
+            getWidth: 4,
+            getDashArray: [5, 2],
+            getColor: [75, 144, 226, 225] // Blue for Hillers with higher opacity
+          }
+        });
+        layerList.push(hillersRouteLayer);
+      }
+      
+      // For Jackson specific view
+      if (activeElement === 'JACKSON' || (showExpeditionRoutes && !activeElement)) {
+        const jacksonRouteLayer = createExpeditionRouteLayer({
+          photographer: 'Jackson',
+          visible: true,
+          style: {
+            getWidth: 4,
+            getDashArray: [5, 2],
+            getColor: [255, 87, 51, 225] // Red for Jackson with higher opacity
+          }
+        });
+        layerList.push(jacksonRouteLayer);
+      }
+    }
+    
     // Connector lines feature disabled
     // Note: We attempted to implement connector lines, but are currently bypassing this feature
     
@@ -637,7 +670,20 @@ export default function App() {
     // }
     
     return layerList;
-  }, [selectedPhotoId, handlePhotoSelect, offsetX, offsetY, rotation, scale, handleLabelDataUpdate, showLabelConnectors, labelData, labelColumns, activeElement]);
+  }, [
+    selectedPhotoId, 
+    handlePhotoSelect, 
+    offsetX, 
+    offsetY, 
+    rotation, 
+    scale, 
+    handleLabelDataUpdate, 
+    showLabelConnectors, 
+    showExpeditionRoutes, 
+    labelData, 
+    labelColumns, 
+    activeElement
+  ]);
   
   // Render selected photo info if a photo is selected
   const selectedPhoto = selectedPhotoId ? getPhotoById(selectedPhotoId) : null;
@@ -1529,6 +1575,31 @@ export default function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'rgb(128, 90, 180)', boxShadow: '0 0 4px rgba(0,0,0,0.3)' }}></div>
               <span style={{ color: 'white', fontSize: '1rem' }}>Expeditions</span>
+            </div>
+            
+            {/* Expedition Routes Toggle */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px', 
+              marginTop: '5px', 
+              cursor: 'pointer',
+              padding: '5px 0',
+              borderTop: '1px solid rgba(255,255,255,0.2)'
+            }}
+            onClick={() => setShowExpeditionRoutes(!showExpeditionRoutes)}>
+              <div style={{ 
+                width: '16px', 
+                height: '16px', 
+                border: '2px solid white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: showExpeditionRoutes ? 'rgba(255,255,255,0.2)' : 'transparent'
+              }}>
+                {showExpeditionRoutes && <div style={{ width: '8px', height: '8px', backgroundColor: 'white' }}></div>}
+              </div>
+              <span style={{ color: 'white', fontSize: '1rem' }}>Show Expedition Routes</span>
             </div>
           </div>
         </div>
