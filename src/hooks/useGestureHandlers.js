@@ -1,12 +1,9 @@
 import { useGesture } from '@use-gesture/react';
-import { useViewState } from './deck/useViewState';
+import { HOME_VIEW_STATE } from './deck/useViewState';
 import { FlyToInterpolator } from '@deck.gl/core';
 
 // Gesture handlers for touch and mouse controls
 export function useGestureHandlers(setViewState, setSelectedPhotoId, setShowInfoPanel, setInfoPanelOpacity) {
-  // Get the initial/home view state
-  const homeViewState = useViewState();
-  
   // Calculate a threshold for swipe detection
   const SWIPE_THRESHOLD = 100; // px
   const DRAG_THRESHOLD = 200; // px
@@ -27,7 +24,7 @@ export function useGestureHandlers(setViewState, setSelectedPhotoId, setShowInfo
     const currentZoom = currentViewState.zoom || 0;
     
     // Only show the info panel if we're going back to a zoomed-out view (zoom < 7.5)
-    if (homeViewState.zoom < 7.5) {
+    if (HOME_VIEW_STATE.zoom < 7.5) {
       // First make panel visible (but transparent)
       if (setShowInfoPanel) {
         setShowInfoPanel(true);
@@ -43,7 +40,7 @@ export function useGestureHandlers(setViewState, setSelectedPhotoId, setShowInfo
     
     // Return to the initial view state with a smooth transition
     setViewState({
-      ...homeViewState,
+      ...HOME_VIEW_STATE,
       transitionDuration: transitionDuration, 
       transitionInterpolator: new FlyToInterpolator({
         speed: 1.2,

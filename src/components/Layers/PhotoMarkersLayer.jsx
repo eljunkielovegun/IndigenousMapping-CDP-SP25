@@ -520,12 +520,18 @@ export default function createPhotoMarkersLayer({
   onLabelDataUpdate = null, // Callback for external label rendering
   showLabelConnectors = true, // Whether to show connector lines
   showLabels = false, // Whether to show labels
-  zoomLevel = 0 // Current zoom level
+  zoomLevel = 0, // Current zoom level
+  filterPhotographer = null // Filter photos by photographer
 } = {})  {
   
   // Get all photos and filter to only those with valid coordinates
   const allPhotos = getAllPhotos();
-  const validPhotos = filterValidPhotos(allPhotos);
+  let validPhotos = filterValidPhotos(allPhotos);
+  
+  // Apply photographer filter if specified
+  if (filterPhotographer) {
+    validPhotos = validPhotos.filter(photo => photo.photographer === filterPhotographer);
+  }
   
   // Fix up the valid photos with necessary camera data if missing
   validPhotos.forEach(photo => {

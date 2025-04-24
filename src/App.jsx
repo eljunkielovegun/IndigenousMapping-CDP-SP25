@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect, createContext } from 'react';
 import { GeoJsonLayer, LineLayer } from '@deck.gl/layers';
 import { FlyToInterpolator } from '@deck.gl/core';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -7,7 +7,7 @@ import MapboxStyleLoader from './components/DeckGL/MapboxStyleLoader';
 import createPhotoMarkersLayer from './components/Layers/PhotoMarkersLayer';
 import { createPhotoOverlayLayerSync } from './components/Layers/PhotoOverlayLayer';
 import { getPhotoById, getAllPhotos } from './data/historicalPhotoData';
-import { useViewState } from './hooks/deck/useViewState';
+import { useViewState, HOME_VIEW_STATE } from './hooks/deck/useViewState';
 import { useGestureHandlers } from './hooks/useGestureHandlers';
 import { MAPBOX_TOKEN } from './config/mapbox';
 
@@ -16,11 +16,54 @@ import { getAssetPath } from './utils/assetUtils';
 // Path to the custom Mapbox style
 const CUSTOM_STYLE_URL = getAssetPath('assets/geojson/mapBoxStyle.json');
 
+// Define app mode constants
+const APP_MODES = {
+  HOME: 'home',
+  EXPLORE: 'explore',
+  STORY: 'story'
+};
+
+// Define story types for different content categories
+const STORY_TYPES = {
+  // Indigenous peoples
+  DINE: 'dine',
+  HOPI: 'hopi',
+  ZUNI: 'zuni',
+  
+  // Photographers
+  HILLERS: 'hillers',
+  JACKSON: 'jackson',
+  
+  // National Parks
+  YELLOWSTONE: 'yellowstone',
+  GRAND_CANYON: 'grand_canyon',
+  CHACO_CULTURE: 'chaco_culture',
+  
+  // Bureau
+  ETHNOGRAPHY: 'ethnography'
+};
+
+// Create a context to share app functions with other components
+export const AppContext = createContext({
+  handlePhotoSelect: () => {},
+  returnToHomeView: () => {},
+  enterExploreMode: () => {},
+  enterStoryMode: () => {},
+  exitStoryMode: () => {},
+  appMode: APP_MODES.HOME,
+  storyType: null,
+  STORY_TYPES: {},
+  APP_MODES: {}
+});
+
 export default function App() {
   const [error, setError] = useState(null);
   const [selectedPhotoId, setSelectedPhotoId] = useState(null);
   const [viewState, setViewState] = useState(null);
   const initialViewState = useViewState();
+  const [appMode, setAppMode] = useState(APP_MODES.HOME); // Current application mode
+  const [storyType, setStoryType] = useState(null); // Current story type (if in story mode)
+  const [activeElement, setActiveElement] = useState(null); // Currently active UI element (for animations)
   const [territoriesVisible, setTerritoriesVisible] = useState({
     navajo: true,   // Navajo (Diné) Nation
     hopi: true,     // Hopi Nation
@@ -95,8 +138,29 @@ export default function App() {
   // Track previous zoom level to detect changes
   const prevZoomRef = useRef(effectiveViewState.zoom);
   
-  // Effect to monitor distance from marker for panel visibility
+  // Effect to monitor distance from marker for panel visibility and handle app mode changes
   useEffect(() => {
+    // Handle app mode changes based on view state
+    const isAtHomeView = (
+      Math.abs(effectiveViewState.longitude - HOME_VIEW_STATE.longitude) < 0.01 &&
+      Math.abs(effectiveViewState.latitude - HOME_VIEW_STATE.latitude) < 0.01 &&
+      Math.abs(effectiveViewState.zoom - HOME_VIEW_STATE.zoom) < 0.1
+    );
+    
+    // Update app mode based on zoom and position
+    if (isAtHomeView) {
+      setAppMode(APP_MODES.HOME);
+    } else if (effectiveViewState.zoom >= 7.5) {
+      setAppMode(APP_MODES.EXPLORE);
+    } else {
+      // Between home and explore, but zoomed out
+      if (appMode === APP_MODES.STORY) {
+        // Keep story mode if we're in it
+      } else {
+        setAppMode(APP_MODES.HOME);
+      }
+    }
+    
     if (selectedPhotoId) {
       const photo = getPhotoById(selectedPhotoId);
       if (photo && photo.coordinates) {
@@ -144,7 +208,7 @@ export default function App() {
     
     // Update previous zoom level
     prevZoomRef.current = effectiveViewState.zoom;
-  }, [effectiveViewState.latitude, effectiveViewState.longitude, effectiveViewState.zoom, selectedPhotoId]);
+  }, [effectiveViewState.latitude, effectiveViewState.longitude, effectiveViewState.zoom, selectedPhotoId, appMode]);
   
   // Note: We've removed the debug tracking of viewState changes to avoid potential issues
   
@@ -155,6 +219,188 @@ export default function App() {
     setShowInfoPanel,
     setInfoPanelOpacity
   );
+  
+  // Function to explicitly return to home view - can be called from anywhere
+  const returnToHomeView = useCallback(() => {
+    // Reset selected photo if any
+    setSelectedPhotoId(null);
+    
+    // Clear any active story
+    setStoryType(null);
+    
+    // Clear any active element
+    setActiveElement(null);
+    
+    // Show territories
+    setTerritoriesVisible({
+      navajo: true,
+      hopi: true,
+      zuni: true,
+      others: false
+    });
+    
+    // Set app mode to HOME
+    setAppMode(APP_MODES.HOME);
+    
+    // Use the goToHomeView function from gesture handlers
+    goToHomeView();
+  }, [goToHomeView]);
+  
+  // Function to enter Explore mode - free camera movement
+  const enterExploreMode = useCallback((location = {}) => {
+    // Set app mode to EXPLORE
+    setAppMode(APP_MODES.EXPLORE);
+    setStoryType(null); // Clear any active story
+    
+    // Default explore location (a bit zoomed in from home)
+    const defaultExploreView = {
+      ...HOME_VIEW_STATE,
+      zoom: 8.5,
+      pitch: 50,
+      bearing: -15,
+    };
+    
+    // Set view state with smooth transition
+    setViewState({
+      ...defaultExploreView,
+      ...location, // Override with any provided location params
+      transitionDuration: 2500,
+      transitionInterpolator: new FlyToInterpolator({
+        speed: 1.2,
+        curve: 1.5,
+        screenSpeed: 15
+      })
+    });
+  }, []);
+  
+  // Function to enter Story mode - guided experience for a specific topic
+  const enterStoryMode = useCallback((type, startingLocation = {}) => {
+    if (!STORY_TYPES[type]) {
+      console.error(`Invalid story type: ${type}`);
+      return;
+    }
+    
+    // CRITICAL: Immediately hide ALL UI elements EXCEPT the clicked one
+    // Using direct style manipulation for instant effect before any React state changes
+    
+    // Force-hide main title immediately
+    const mainTitle = document.querySelector('.main-title');
+    if (mainTitle) {
+      mainTitle.style.opacity = '0';
+      mainTitle.style.transition = 'none';
+    }
+    
+    // Also hide the subtitle
+    const subtitle = document.querySelector('.main-title + h2');
+    if (subtitle) {
+      subtitle.style.opacity = '0';
+      subtitle.style.transition = 'none';
+    }
+    
+    // Force-hide all category titles
+    document.querySelectorAll('.category-title').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transition = 'none';
+    });
+    
+    // Force-hide all category items except the active one
+    document.querySelectorAll('.category-item').forEach(el => {
+      if (!el.classList.contains(`${type}-category`)) {
+        el.style.opacity = '0';
+        el.style.transition = 'none';
+        el.style.pointerEvents = 'none';
+      } else {
+        // Prepare active element for animation
+        el.style.transition = 'all 0.6s ease-out';
+        
+        // Determine direction based on element position
+        const isRightSide = el.closest('div').style.right !== '';
+        if (isRightSide) {
+          el.style.transform = 'translateX(-2vw)'; 
+        } else {
+          el.style.transform = 'translateX(2vw)';
+        }
+        
+        // Set appropriate size based on type
+        if (type === 'ETHNOGRAPHY') {
+          el.style.fontSize = '5rem';
+        } else if (type === 'DINE' || type === 'HOPI' || type === 'ZUNI') {
+          el.style.fontSize = '5rem';
+        } else {
+          el.style.fontSize = '3rem';
+        }
+      }
+    });
+    
+    // Hide any extra elements (like the explore button)
+    const exploreButton = document.querySelector('.explore-button');
+    if (exploreButton) {
+      exploreButton.style.opacity = '0';
+      exploreButton.style.transition = 'none';
+    }
+    
+    // Now set state (this happens after the above DOM manipulations)
+    setAppMode(APP_MODES.STORY);
+    setStoryType(STORY_TYPES[type]);
+    setActiveElement(type);
+    
+    // Clear any selected photo
+    setSelectedPhotoId(null);
+    
+    // For territory stories, show only relevant territory
+    if (type === 'DINE') {
+      setTerritoriesVisible({
+        navajo: true,
+        hopi: false,
+        zuni: false,
+        others: false
+      });
+    } else if (type === 'HOPI') {
+      setTerritoriesVisible({
+        navajo: false,
+        hopi: true,
+        zuni: false,
+        others: false
+      });
+    } else if (type === 'ZUNI') {
+      setTerritoriesVisible({
+        navajo: false,
+        hopi: false,
+        zuni: true,
+        others: false
+      });
+    }
+    
+    // Get default location for each story type (these could be customized per story)
+    let storyLocation = {
+      // Default for story mode is a slightly elevated view
+      zoom: 7.5,
+      pitch: 40,
+      bearing: 0,
+      ...startingLocation // Override with any provided location params
+    };
+    
+    // Set view state with smooth transition
+    setViewState({
+      ...HOME_VIEW_STATE, // Start from home state
+      ...storyLocation,   // Apply story-specific modifications
+      transitionDuration: 3000,
+      transitionInterpolator: new FlyToInterpolator({
+        speed: 1.0,
+        curve: 1.5,
+        screenSpeed: 10
+      })
+    });
+  }, []);
+  
+  // Function to exit Story mode and return to home view
+  const exitStoryMode = useCallback(() => {
+    // Clear the active element
+    setActiveElement(null);
+    
+    // Simply use the existing returnToHomeView function
+    returnToHomeView();
+  }, [returnToHomeView]);
   
   // We've removed the manual keyboard controls since we re-enabled the DeckGL controller
   
@@ -178,6 +424,9 @@ export default function App() {
       // Set up timing constants
       const transitionDuration = 3000;
       const fadeInDuration = 500;
+      
+      // Update app mode to EXPLORE when clicking a photo marker
+      setAppMode(APP_MODES.EXPLORE);
       
       // Start showing the panel slightly before the transition completes
       // This ensures the fade-in finishes right when the transition does
@@ -264,109 +513,32 @@ export default function App() {
     setLabelData(data);
   }, []);
   
-  // Split label data into multiple columns for display
+  // Prepare label data for display
   const getColumnizedLabelData = useCallback(() => {
     if (!labelData || labelData.length === 0) return [];
     
     // First, organize data based on grouping preference
     let organizedData = [...labelData];
     
-    if (groupLabelsByPhotographer) {
-      // Sort by photographer first, then by latitude
-      organizedData.sort((a, b) => {
-        // First by photographer
-        if (a.photographer !== b.photographer) {
-          return a.photographer.localeCompare(b.photographer);
-        }
-        // Then by latitude (north to south)
-        return b.markerPosition[1] - a.markerPosition[1];
-      });
+    // Filter by photographer if in photographer story mode
+    if (activeElement === 'HILLERS') {
+      // Debug log to see what data we have
+      console.log('Filtering for Hillers', organizedData.map(i => i.photographer));
+      organizedData = organizedData.filter(item => item.photographer === "Hillers");
+    } else if (activeElement === 'JACKSON') {
+      organizedData = organizedData.filter(item => item.photographer === "Jackson");
     }
     
-    // Create a multidimensional array with the number of columns
-    const result = [];
-    const itemsPerColumn = Math.ceil(organizedData.length / labelColumns);
+    // Sort by latitude (north to south)
+    organizedData.sort((a, b) => b.markerPosition[1] - a.markerPosition[1]);
     
-    // For grouped display, we want to keep photographers together in columns if possible
-    if (groupLabelsByPhotographer) {
-      // Create column data with photographer headers
-      let currentColumn = [];
-      let currentPhotographer = null;
-      let columnIndex = 0;
-      
-      organizedData.forEach((item, index) => {
-        // Add a new column when we've reached the items per column limit
-        // But try to keep items with the same photographer in the same column if possible
-        if (currentColumn.length >= itemsPerColumn && 
-            (item.photographer !== currentPhotographer || 
-             index === organizedData.length - 1 || 
-             organizedData[index + 1]?.photographer !== item.photographer)) {
-          
-          result.push(currentColumn);
-          currentColumn = [];
-          columnIndex++;
-          
-          // Stop adding columns if we've reached the maximum
-          if (columnIndex >= labelColumns) {
-            columnIndex = labelColumns - 1;
-          }
-        }
-        
-        // Track the current photographer for grouping
-        currentPhotographer = item.photographer;
-        
-        // Add the item to the current column
-        currentColumn.push({
-          ...item,
-          isPhotographerHeader: currentColumn.length === 0 || 
-                               (currentColumn.length > 0 && 
-                                currentColumn[currentColumn.length - 1].photographer !== item.photographer)
-        });
-      });
-      
-      // Add the last column if it has items
-      if (currentColumn.length > 0) {
-        result.push(currentColumn);
-      }
-      
-      // If we ended up with fewer columns than requested, redistribute
-      while (result.length < labelColumns && result.some(col => col.length > itemsPerColumn)) {
-        // Find the longest column
-        const longestIndex = result.findIndex(col => 
-          col.length === Math.max(...result.map(c => c.length))
-        );
-        
-        if (longestIndex === -1 || result[longestIndex].length <= itemsPerColumn) {
-          break;
-        }
-        
-        // Create a new column with items from the end of the longest one
-        const newColumn = result[longestIndex].splice(
-          Math.ceil(result[longestIndex].length / 2)
-        );
-        
-        if (newColumn.length > 0) {
-          // Make the first item a photographer header if needed
-          if (newColumn[0]) {
-            newColumn[0] = {
-              ...newColumn[0],
-              isPhotographerHeader: true
-            };
-          }
-          
-          result.push(newColumn);
-        }
-      }
-    } else {
-      // Simple distribution without grouping
-      for (let i = 0; i < labelColumns; i++) {
-        const columnData = organizedData.slice(i * itemsPerColumn, (i + 1) * itemsPerColumn);
-        result.push(columnData);
-      }
-    }
-    
-    return result;
-  }, [labelData, labelColumns, groupLabelsByPhotographer]);
+    // For single column display, just return one column with all items
+    // This is simplified for the minimal version
+    return [organizedData.map(item => ({
+      ...item,
+      isPhotographerHeader: false // No headers in minimal version
+    }))];
+  }, [labelData, activeElement]);
 
   // Connector lines feature (disabled)
   // This function has been preserved for future development
@@ -377,14 +549,17 @@ export default function App() {
   
   // Create the photo markers layer and photo overlay if a photo is selected
   const layers = useMemo(() => {
-    // Get the base markers layer
+    // Get the base markers layer with photographer filtering
     const markersLayer = createPhotoMarkersLayer({
       onPhotoSelect: handlePhotoSelect,
       selectedPhotoId: selectedPhotoId,
       onLabelDataUpdate: handleLabelDataUpdate,
       showLabelConnectors: showLabelConnectors,
       showLabels: showLabels,
-      zoomLevel: effectiveViewState.zoom
+      zoomLevel: effectiveViewState.zoom,
+      // Add photographer filtering
+      filterPhotographer: activeElement === 'HILLERS' ? "Hillers" : 
+                         activeElement === 'JACKSON' ? "Jackson" : null
     });
     
     // Initialize our layer list with the markers layer
@@ -399,7 +574,7 @@ export default function App() {
     // }
     
     return layerList;
-  }, [selectedPhotoId, handlePhotoSelect, offsetX, offsetY, rotation, scale, handleLabelDataUpdate, showLabelConnectors, labelData, labelColumns]);
+  }, [selectedPhotoId, handlePhotoSelect, offsetX, offsetY, rotation, scale, handleLabelDataUpdate, showLabelConnectors, labelData, labelColumns, activeElement]);
   
   // Render selected photo info if a photo is selected
   const selectedPhoto = selectedPhotoId ? getPhotoById(selectedPhotoId) : null;
@@ -453,17 +628,44 @@ export default function App() {
   
   // We no longer need these effects - connector lines are handled by DeckGL directly
 
+  // Create a context value containing the app functions
+  const appContextValue = useMemo(() => ({
+    // Navigation functions
+    handlePhotoSelect,
+    returnToHomeView,
+    enterExploreMode,
+    enterStoryMode,
+    exitStoryMode,
+    
+    // App state
+    appMode,
+    storyType,
+    
+    // Constants
+    APP_MODES,
+    STORY_TYPES
+  }), [
+    handlePhotoSelect, 
+    returnToHomeView, 
+    enterExploreMode, 
+    enterStoryMode,
+    exitStoryMode,
+    appMode, 
+    storyType
+  ]);
+
   return (
-    <div 
-      ref={containerRef} 
-      style={{ 
-        width: '100vw', 
-        height: '100vh', 
-        position: 'relative',
-        touchAction: 'none' 
-      }}
-      {...gestureBindings()}
-    >
+    <AppContext.Provider value={appContextValue}>
+      <div 
+        ref={containerRef} 
+        style={{ 
+          width: '100vw', 
+          height: '100vh', 
+          position: 'relative',
+          touchAction: 'none' 
+        }}
+        {...gestureBindings()}
+      >
       {/* Add CSS for marker rotation animation */}
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin360 {
@@ -505,23 +707,23 @@ export default function App() {
       {/* HTML container for photo labels */}
       {showLabels && (
         <>
-          {/* Side panel labels (shown when zoomed out) */}
-          {effectiveViewState.zoom < 7.5 && (
+          {/* Side panel labels (shown only when in photographer story mode) */}
+          {(activeElement === 'HILLERS' || activeElement === 'JACKSON') && (
             <div 
               className="photo-labels-container"
               style={{
                 position: 'absolute',
-                top: '15vh', // Start below the title
-                right: 0,
+                top: activeElement === 'HILLERS' ? 'calc(5vw + 4rem)' : activeElement === 'JACKSON' ? 'calc(6vw + 7rem)' : '15vh', // Position lower beneath the specific photographer name
+                right: '20px',
                 bottom: '15vh', // Give space at bottom
-                width: labelColumns === 1 ? '300px' : labelColumns === 2 ? '460px' : '600px', // Width based on columns
-                paddingRight: '5px',
+                width: '350px', // Fixed width for single column
+                paddingRight: '10px',
                 zIndex: 10,
                 pointerEvents: 'none',
                 overflowY: 'auto',
                 overflowX: 'hidden',
                 display: 'flex',
-                flexDirection: 'row', // Changed to row to support columns
+                flexDirection: 'column',
                 justifyContent: 'flex-start',
                 background: 'transparent',
                 border: 'none',
@@ -536,73 +738,45 @@ export default function App() {
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    width: labelColumns === 1 ? '100%' : labelColumns === 2 ? '50%' : '33.33%',
-                    paddingRight: columnIndex < labelColumns - 1 ? '5px' : '0'
+                    width: '100%',
+                    paddingTop: '15px' // Add some top padding to the list
                   }}
                 >
                   {columnData.map((label, index) => (
-                    <React.Fragment key={label.id}>
-                      {/* Photographer header when grouping is enabled */}
-                      {groupLabelsByPhotographer && label.isPhotographerHeader && (
-                        <div 
-                          className="photographer-header"
-                          style={{
-                            margin: '5px 0 2px 0',
-                            backgroundColor: 'rgba(0, 0, 0, 0.4)', // Semi-transparent background
-                            color: label.photographer === 'Jackson' ? 'rgb(255, 155, 132)' : 'rgb(132, 190, 255)',
-                            padding: '2px 5px',
-                            fontSize: '10px',
-                            fontWeight: 'bold',
-                            width: '100%',
-                            textAlign: 'left',
-                            pointerEvents: 'none',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            borderLeft: label.photographer === 'Jackson' ? 
-                              '3px solid rgb(255, 87, 51)' : 
-                              '3px solid rgb(75, 144, 226)',
-                            textShadow: '0px 0px 2px rgba(0,0,0,0.8)'
-                          }}
-                        >
-                          {label.photographer}
-                        </div>
-                      )}
-                      
-                      {/* Photo label */}
-                      <div 
-                        className="photo-label"
-                        data-photographer={label.photographer} // Store photographer data for styling
-                        style={{
-                          margin: '0',
-                          backgroundColor: 'rgba(0, 0, 0, 0)', // Transparent background
-                          color: 'white',
-                          borderRadius: '0', // No radius
-                          padding: '0', // No padding
-                          fontSize: '12px', // Keep smaller font
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          pointerEvents: 'auto',
-                          width: '100%',
-                          transition: 'all 0.2s ease-out',
-                          opacity: selectedPhotoId === label.id ? 1 : 0.8,
-                          transform: 'scale(1)', // No scaling
-                          boxShadow: 'none', // No shadow
-                          textAlign: 'left',
-                          height: '24px', // Height for the container
-                          display: 'flex', // Flexbox
-                          alignItems: 'center', // Vertical centering
-                          justifyContent: 'flex-start', // Align to left
-                          paddingLeft: groupLabelsByPhotographer ? '10px' : '5px', // More indent when grouped
-                          borderLeft: selectedPhotoId === label.id ? 
-                            (label.photographer === 'Jackson' ? '3px solid rgb(255, 87, 51)' : '3px solid rgb(75, 144, 226)') : 
-                            '3px solid transparent', // Keep same space but make invisible
-                          textShadow: '0px 0px 3px rgba(0,0,0,0.9), 0px 0px 1px #000' // Stronger text shadow for white text
-                        }}
-                        onClick={() => handlePhotoSelect(label.id)}
-                      >
-                        {label.label}
-                      </div>
-                    </React.Fragment>
+                    <div 
+                      key={label.id}
+                      className="photo-label"
+                      data-photographer={label.photographer}
+                      style={{
+                        margin: '0', // No margin for extremely tight spacing
+                        backgroundColor: 'rgba(0, 0, 0, 0)', // Transparent background
+                        color: 'white',
+                        padding: '0', 
+                        fontSize: '1.3rem', // Increased font size to 1.3rem
+                        lineHeight: '1.1', // Tighter line height
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        pointerEvents: 'auto',
+                        width: '100%',
+                        transition: 'all 0.2s ease-out',
+                        opacity: selectedPhotoId === label.id ? 1 : 0.8,
+                        transform: 'scale(1)',
+                        boxShadow: 'none',
+                        textAlign: 'left',
+                        height: '1.5rem', // Fixed smaller height for tighter spacing
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        paddingLeft: '5px',
+                        borderLeft: selectedPhotoId === label.id ? 
+                          (label.photographer === 'Jackson' ? '3px solid rgb(255, 87, 51)' : '3px solid rgb(75, 144, 226)') : 
+                          '3px solid transparent',
+                        textShadow: '0px 0px 8px rgba(0,0,0,1), 0px 0px 4px #000, 0px 0px 2px #000' // Even darker drop shadow
+                      }}
+                      onClick={() => handlePhotoSelect(label.id)}
+                    >
+                      {label.label}
+                    </div>
                   ))}
                 </div>
               ))}
@@ -615,23 +789,26 @@ export default function App() {
           */}
         </>
       )}
-      {/* Flat Mini-map for returning to the initial view */}
-      <div
-        onClick={goToHomeView}
-        style={{
-          position: 'absolute',
-          bottom: '5vw',
-          right: '5vw',
-          zIndex: 15,
-          background: 'transparent',
-          border: 'none',
-          borderRadius: '8px',
-          width: '128px',
-          height: '128px',
-          overflow: 'visible',
-          cursor: 'pointer'
-        }}
-        title="Return to home view (you can also swipe left with three fingers or long drag left)"
+      {/* Flat Mini-map for returning to the initial view - hidden when at home view */}
+      {(effectiveViewState.longitude !== HOME_VIEW_STATE.longitude || 
+        effectiveViewState.latitude !== HOME_VIEW_STATE.latitude || 
+        effectiveViewState.zoom !== HOME_VIEW_STATE.zoom) && (
+        <div
+          onClick={returnToHomeView}
+          style={{
+            position: 'absolute',
+            bottom: '5vw',
+            right: '5vw',
+            zIndex: 15,
+            background: 'transparent',
+            border: 'none',
+            borderRadius: '8px',
+            width: '128px',
+            height: '128px',
+            overflow: 'visible',
+            cursor: 'pointer'
+          }}
+          title="Return to home view (you can also swipe left with three fingers or long drag left)"
       >
         {/* Mini-map content with indigenous territories overlay */}
         <div style={{ 
@@ -733,11 +910,12 @@ export default function App() {
           {/* No home icon - clean minimalist design */}
         </div>
       </div>
+      )}
       
-      {/* Title - only visible when zoomed out */}
-      {effectiveViewState.zoom < 7.5 && (
+      {/* Title - only visible when zoomed out and not in story mode */}
+      {effectiveViewState.zoom < 7.5 && !activeElement && (
         <div style={{ position: 'absolute', top: '2vw', left: '2vw', zIndex: 10 }}>
-          <h1 className="geographica-hand" style={{ 
+          <h1 className="geographica-hand main-title" style={{ 
             margin: 0,
             padding: 0,
             color: 'white',
@@ -763,173 +941,279 @@ export default function App() {
         </div>
       )}
       
-      {showInfoPanel && effectiveViewState.zoom < 7.5 && (
-        <div style={{ 
+      {/* People Section - only visible when zoomed out or when in respective story mode */}
+      {(effectiveViewState.zoom < 7.5 || activeElement === 'DINE' || activeElement === 'HOPI' || activeElement === 'ZUNI') && (
+        <div style={{
           position: 'absolute', 
-          bottom: '5vw', 
-          left: '5vw', 
+          top: '50%', 
+          transform: 'translateY(-50%)', 
+          left: '8vw', 
           zIndex: 10, 
-          background: 'white', 
-          padding: '10px', 
-          borderRadius: '4px', 
-          boxShadow: '0 0 10px rgba(0,0,0,0.3)',
-          opacity: infoPanelOpacity,
-          transition: 'opacity 300ms ease-in-out',
-          pointerEvents: infoPanelOpacity === 0 ? 'none' : 'auto'
+          maxWidth: '30vw', 
+          background: 'transparent', 
+          opacity: 1, 
+          transition: 'opacity 0.3s', 
+          pointerEvents: 'auto'
         }}>
-          <h3 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Indigenous Territories & Expeditions</h3>
-          
-          {/* Legend */}
-          <div className="aldine-text" style={{ fontSize: '12px', marginBottom: '15px' }}>
-            <div><span style={{ color: 'hsla(0, 99%, 61%, 0.83)', fontWeight: 'bold' }}>▬▬▬</span> Hillers Expedition</div>
-            <div><span style={{ color: 'hsl(199, 100%, 43%)', fontWeight: 'bold' }}>▬▬▬</span> Jackson Expedition</div>
-            <div><span style={{ color: 'hsla(54, 72%, 49%, 0.6)', fontWeight: 'bold' }}>▬▬▬</span> Travel Routes</div>
-            <div><span style={{ color: 'hsl(54, 100%, 50%)', fontWeight: 'bold' }}>●</span> Major Cities</div>
-            <div><span style={{ color: 'hsl(30, 100%, 50%)', fontWeight: 'bold' }}>●</span> General Photo Locations</div>
-            <div><span style={{ color: 'rgb(255, 87, 51)', fontWeight: 'bold' }}>●</span> Jackson Photos</div>
-            <div><span style={{ color: 'rgb(75, 144, 226)', fontWeight: 'bold' }}>●</span> Hillers Photos</div>
-          </div>
-          
-          {/* Territory Controls */}
-          <div style={{ borderTop: '1px solid #ddd', paddingTop: '8px', marginTop: '5px' }}>
-            <h4 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Territory Visibility</h4>
-            
-            <div className="aldine-text" style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox"
-                  checked={territoriesVisible.navajo}
-                  onChange={() => toggleTerritory('navajo')}
-                  style={{ marginRight: '5px' }}
-                />
-                <span className="aldine-regular" style={{ color: 'hsla(0, 99%, 61%, 0.83)' }}>Diné (Navajo)</span>
-              </label>
-              
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox"
-                  checked={territoriesVisible.hopi}
-                  onChange={() => toggleTerritory('hopi')}
-                  style={{ marginRight: '5px' }}
-                />
-                <span className="aldine-regular" style={{ color: 'hsla(294, 66%, 34%, 0.83)' }}>Hopi</span>
-              </label>
-              
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox"
-                  checked={territoriesVisible.zuni}
-                  onChange={() => toggleTerritory('zuni')}
-                  style={{ marginRight: '5px' }}
-                />
-                <span className="aldine-regular" style={{ color: 'hsla(249, 70%, 59%, 0.83)' }}>Zuni</span>
-              </label>
-              
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox"
-                  checked={territoriesVisible.others}
-                  onChange={() => toggleTerritory('others')}
-                  style={{ marginRight: '5px' }}
-                />
-                <span className="aldine-regular" style={{ color: 'hsla(156, 66%, 34%, 0.83)' }}>Other Territories</span>
-              </label>
-              
-              <button 
-                onClick={toggleAllTerritories} 
-                style={{ 
-                  marginTop: '5px', 
-                  padding: '3px', 
-                  fontSize: '11px',
-                  background: '#f0f0f0',
-                  border: '1px solid #ccc',
-                  borderRadius: '3px',
-                  cursor: 'pointer'
+          <h2 className="geographica-hand category-title" style={{ 
+            margin: 0, 
+            padding: 0, 
+            color: 'white', 
+            fontSize: '4rem', 
+            textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+            lineHeight: 1.1, 
+            textAlign: 'left', 
+            cursor: 'pointer', 
+            transition: appMode === APP_MODES.STORY ? 'none' : 'opacity 0.3s',
+            opacity: activeElement && (activeElement === 'DINE' || activeElement === 'HOPI' || activeElement === 'ZUNI') ? 0 : 1, 
+            pointerEvents: activeElement ? 'none' : 'auto'
+          }}>
+            The People
+          </h2>
+          <div className="aldine-regular" style={{ 
+            margin: '0.5rem 0 0', 
+            padding: 0, 
+            color: 'white', 
+            fontSize: '2rem', 
+            textShadow: 'rgba(0, 0, 0, 0.6) 2px 2px 4px', 
+            lineHeight: 1.4, 
+            textAlign: 'left', 
+            display: 'flex', 
+            flexDirection: 'column'
+          }}>
+            <div style={{ transition: 'opacity 0.3s' }}>
+              <div style={{ 
+                marginTop: '0.5rem', 
+                opacity: 1, 
+                transition: 'opacity 0.3s, transform 0.5s ease-out', 
+                pointerEvents: 'auto',
+                position: 'relative'
+              }}>
+                <span className="geographica-hand category-item DINE-category" style={{ 
+                  color: 'white', 
+                  fontSize: activeElement === 'DINE' ? '5rem' : '3.5rem', 
+                  textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+                  lineHeight: 1.1, 
+                  cursor: 'pointer', 
+                  transition: appMode === APP_MODES.STORY ? 
+                    (activeElement === 'DINE' ? 'all 0.6s ease-out' : 'none') : 
+                    'all 0.6s ease-out', 
+                  WebkitTapHighlightColor: 'transparent', 
+                  userSelect: 'none',
+                  opacity: activeElement && activeElement !== 'DINE' ? 0 : 1,
+                  transform: activeElement === 'DINE' ? 'translateX(2vw)' : 'translateX(0)'
                 }}
-              >
-                {territoriesVisible.navajo && 
-                  territoriesVisible.hopi && 
-                  territoriesVisible.zuni && 
-                  territoriesVisible.others ? 'Hide All' : 'Show All'}
-              </button>
-              
-              <div style={{ borderTop: '1px solid #ddd', marginTop: '10px', paddingTop: '10px' }}>
-                <h4 className="aldine-bold" style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Display Options</h4>
-                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginBottom: '8px' }}>
-                  <input 
-                    type="checkbox"
-                    checked={showLabels}
-                    onChange={() => setShowLabels(!showLabels)}
-                    style={{ marginRight: '5px' }}
-                  />
-                  <span className="aldine-regular">Show Photo Labels</span>
-                </label>
-                
-                {/* Label column controls - only show when labels are visible */}
-                {showLabels && (
-                  <div style={{ marginLeft: '15px', marginTop: '5px' }}>
-                    <div className="aldine-regular" style={{ fontSize: '11px', marginBottom: '5px' }}>Label Display:</div>
-                    
-                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '11px', marginBottom: '5px' }}>
-                      <input 
-                        type="checkbox"
-                        checked={groupLabelsByPhotographer}
-                        onChange={() => setGroupLabelsByPhotographer(!groupLabelsByPhotographer)}
-                        style={{ marginRight: '2px' }}
-                      />
-                      <span>Group by Photographer</span>
-                    </label>
-
-                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '11px', marginBottom: '5px' }}>
-                      <input 
-                        type="checkbox"
-                        checked={showLabelConnectors}
-                        onChange={() => setShowLabelConnectors(!showLabelConnectors)}
-                        style={{ marginRight: '2px' }}
-                      />
-                      <span>Show Connector Lines</span>
-                    </label>
-                    
-                    <div className="aldine-regular" style={{ fontSize: '11px', marginBottom: '5px' }}>Columns:</div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '11px' }}>
-                        <input 
-                          type="radio"
-                          name="labelColumns"
-                          checked={labelColumns === 1}
-                          onChange={() => setLabelColumns(1)}
-                          style={{ marginRight: '2px' }}
-                        />
-                        <span>1</span>
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '11px' }}>
-                        <input 
-                          type="radio"
-                          name="labelColumns"
-                          checked={labelColumns === 2}
-                          onChange={() => setLabelColumns(2)}
-                          style={{ marginRight: '2px' }}
-                        />
-                        <span>2</span>
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '11px' }}>
-                        <input 
-                          type="radio"
-                          name="labelColumns"
-                          checked={labelColumns === 3}
-                          onChange={() => setLabelColumns(3)}
-                          style={{ marginRight: '2px' }}
-                        />
-                        <span>3</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
+                onClick={() => enterStoryMode('DINE')}
+                >
+                  Diné
+                </span>
+              </div>
+              <div style={{ 
+                marginTop: '0.5rem', 
+                opacity: 1, 
+                transition: 'opacity 0.3s, transform 0.5s ease-out', 
+                pointerEvents: 'auto',
+                position: 'relative'
+              }}>
+                <span className="geographica-hand category-item HOPI-category" style={{ 
+                  color: 'white', 
+                  fontSize: activeElement === 'HOPI' ? '5rem' : '3.5rem', 
+                  textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+                  lineHeight: 1.1, 
+                  cursor: 'pointer', 
+                  transition: appMode === APP_MODES.STORY ? 
+                    (activeElement === 'HOPI' ? 'all 0.6s ease-out' : 'none') : 
+                    'all 0.6s ease-out', 
+                  WebkitTapHighlightColor: 'transparent', 
+                  userSelect: 'none',
+                  opacity: activeElement && activeElement !== 'HOPI' ? 0 : 1,
+                  transform: activeElement === 'HOPI' ? 'translateX(2vw)' : 'translateX(0)'
+                }}
+                onClick={() => enterStoryMode('HOPI')}
+                >
+                  Hopi
+                </span>
+              </div>
+              <div style={{ 
+                marginTop: '0.5rem', 
+                opacity: 1, 
+                transition: 'opacity 0.3s, transform 0.5s ease-out', 
+                pointerEvents: 'auto',
+                position: 'relative'
+              }}>
+                <span className="geographica-hand category-item ZUNI-category" style={{ 
+                  color: 'white', 
+                  fontSize: activeElement === 'ZUNI' ? '5rem' : '3.5rem', 
+                  textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+                  lineHeight: 1.1, 
+                  cursor: 'pointer', 
+                  transition: appMode === APP_MODES.STORY ? 
+                    (activeElement === 'ZUNI' ? 'all 0.6s ease-out' : 'none') : 
+                    'all 0.6s ease-out', 
+                  WebkitTapHighlightColor: 'transparent', 
+                  userSelect: 'none',
+                  opacity: activeElement && activeElement !== 'ZUNI' ? 0 : 1,
+                  transform: activeElement === 'ZUNI' ? 'translateX(2vw)' : 'translateX(0)'
+                }}
+                onClick={() => enterStoryMode('ZUNI')}
+                >
+                  Zuni
+                </span>
               </div>
             </div>
+            {/* SHOW_LABELS button removed from minimal version */}
           </div>
         </div>
       )}
+      
+      {/* Photographers Section - only visible when zoomed out or when in respective story mode */}
+      {(effectiveViewState.zoom < 7.5 || activeElement === 'HILLERS' || activeElement === 'JACKSON') && (
+        <div style={{
+          position: 'absolute', 
+          top: '2vw', 
+          right: '2vw', 
+          zIndex: 10, 
+          maxWidth: '30vw', 
+          background: 'transparent', 
+          opacity: 1, 
+          transition: 'opacity 0.3s, maxWidth 0.3s', 
+          pointerEvents: 'auto'
+        }}>
+          <h2 className="geographica-hand category-title" style={{ 
+            margin: 0, 
+            padding: 0, 
+            color: 'white', 
+            fontSize: '4rem', 
+            textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+            lineHeight: 1.1, 
+            textAlign: 'right', 
+            cursor: 'pointer', 
+            opacity: activeElement && (activeElement === 'HILLERS' || activeElement === 'JACKSON') ? 0 : 1, 
+            transition: 'opacity 0.3s', 
+            pointerEvents: activeElement ? 'none' : 'auto'
+          }}>
+            The Photographers
+          </h2>
+          <div className="aldine-regular" style={{ 
+            margin: '0.5rem 0 0', 
+            padding: 0, 
+            color: 'white', 
+            fontSize: '2rem', 
+            textShadow: 'rgba(0, 0, 0, 0.8) 3px 3px 8px', 
+            lineHeight: 1.4, 
+            textAlign: 'right', 
+            display: 'flex', 
+            flexDirection: 'column'
+          }}>
+            <span className="category-item HILLERS-category" style={{ 
+              cursor: 'pointer', 
+              opacity: activeElement && activeElement !== 'HILLERS' ? 0 : 1, 
+              transition: 'all 0.6s ease-out', 
+              pointerEvents: 'auto', 
+              fontSize: activeElement === 'HILLERS' ? '3rem' : '2rem', 
+              WebkitTapHighlightColor: 'transparent', 
+              userSelect: 'none', 
+              position: 'relative', 
+              zIndex: 'auto', 
+              whiteSpace: 'nowrap',
+              transform: activeElement === 'HILLERS' ? 'translateX(-2vw)' : 'translateX(0)'
+            }}
+            onClick={() => {
+              // Toggle behavior - if already active, deactivate
+              if (activeElement === 'HILLERS') {
+                // Exit active state
+                setShowLabels(false);
+                setActiveElement(null);
+              } else {
+                // Enter active state for Hillers
+                setShowLabels(true);
+                setActiveElement('HILLERS');
+              }
+              // Always stay in home view
+              setAppMode(APP_MODES.HOME);
+            }}
+            >
+              John K. Hillers
+            </span>
+            <span className="category-item JACKSON-category" style={{ 
+              cursor: 'pointer', 
+              opacity: activeElement && activeElement !== 'JACKSON' ? 0 : 1, 
+              transition: 'all 0.6s ease-out', 
+              pointerEvents: 'auto', 
+              fontSize: activeElement === 'JACKSON' ? '3rem' : '2rem', 
+              WebkitTapHighlightColor: 'transparent', 
+              userSelect: 'none', 
+              position: 'relative', 
+              zIndex: 'auto', 
+              whiteSpace: 'nowrap',
+              transform: activeElement === 'JACKSON' ? 'translateX(-2vw)' : 'translateX(0)'
+            }}
+            onClick={() => {
+              // Toggle behavior - if already active, deactivate
+              if (activeElement === 'JACKSON') {
+                // Exit active state
+                setShowLabels(false);
+                setActiveElement(null);
+              } else {
+                // Enter active state for Jackson
+                setShowLabels(true);
+                setActiveElement('JACKSON');
+              }
+              // Always stay in home view
+              setAppMode(APP_MODES.HOME);
+            }}
+            >
+              William Henry Jackson
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {/* National Parks Section - HIDDEN FOR MINIMAL VERSION */}
+      
+      {/* Bureau of Ethnography Section - HIDDEN FOR MINIMAL VERSION */}
+      
+      {/* Close Button - only visible in story mode */}
+      {appMode === APP_MODES.STORY && (
+        <div 
+          onClick={exitStoryMode}
+          style={{
+            position: 'absolute',
+            top: '5vw',
+            left: '5vw',
+            zIndex: 20,
+            cursor: 'pointer',
+            padding: '15px',
+            borderRadius: '50%',
+            background: 'rgba(0, 0, 0, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            transition: 'all 0.2s ease-out',
+            opacity: 0.8
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.opacity = '1';
+            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)';
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.opacity = '0.8';
+            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="white"/>
+          </svg>
+        </div>
+      )}
+      
+      {/* Explore Button - HIDDEN FOR MINIMAL VERSION */}
+      
+      {/* Info Panel is hidden, but code is kept for future use */}
       
       {error && (
         <div style={{ 
@@ -1060,6 +1344,7 @@ export default function App() {
         showMapboxMarkers={showMapboxMarkers}
         deckRef={deckRef}
       />
-    </div>
+      </div>
+    </AppContext.Provider>
   );
 }
