@@ -45,7 +45,7 @@ const indigenousPeoplesData = {
       "History": "The Hopi have inhabited villages like Old Oraibi since 1150. Their ancestors are known as Histatsinom, or \"people of long ago.\" From 1540 to 1821, the Hopi endured Spanish attempts at conquest and conversion. From 1629 until 1680, the Hopi faced intense \"encomienda\", or forced labor. This period of Spanish control led to the Pueblo Revolts.\n\nIn 1858, Mormon Jacob Hamblin established relations with the Hopi, believing they were descendants of the Nephites from the Book of Mormon. This began decades of Mormon missions. By 1874, Hopi chief Tuuvi allowed Hamblin to settle at Moenkopi. Hamblin then led Bureau of Ethnographer founder John Wesley Powell to the Hopi, marking the beginning of Hopi as subjects of anthropology. These interactions shaped the early decades of anthropology.",
 
       "Origin Story": "The Hopi emerged from under the earth. They were instructed by Maasaw (earth or death god) that the earth was a gift to them, but they must be mindful and care for it. After emerging, the Hopi went in search for Tuuwanasavi, or the \"center place.\" As they journeyed, they placed spiral insignias to mark their path. They settled where a bright light had shown down on the land, the Hopitutskwa.",
-      
+
       "Landscape / Location": "Old Oraibi in Northern Arizona is believed to be the oldest continuously inhabited village in North America. It was settled in 1150. Near Oraibi, there is a sacred place known to the Hopi as Prophecy Rock. It includes an account of Koyaansquatsi, or \"world out of balance\", where the inhabitants of the earth are afflicted by disease, misery, and doubt, etched into the stone's face."
     },
     "visual_references": {

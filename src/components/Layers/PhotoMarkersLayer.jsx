@@ -365,6 +365,7 @@ class PhotoMarkersCompositeLayer extends CompositeLayer {
       sizeMaxPixels: 80,         // Smaller maximum size
       billboard: true,
       pickable: true,
+      pickingRadius: 100,
       parameters: {
         depthTest: false
       }
@@ -399,9 +400,11 @@ class PhotoMarkersCompositeLayer extends CompositeLayer {
       sizeMaxPixels: 70,         // Smaller maximum size
       billboard: true,
       pickable: true,
+      pickingRadius: 100,
       parameters: {
         depthTest: false // Make sure markers are always drawn on top
       },
+      
       // Enable connector lines between icons or icon-to-position
       drawConnector: d => this.props.showLabelConnectors && (selectedPhotoId === d.id || this.state.hoveredMarkerId === d.id || this.state.clickedMarkerId === d.id),  // Only draw connector for active photo if connectors are enabled
       getConnectorSourcePosition: d => d._startPosition,
@@ -439,6 +442,7 @@ class PhotoMarkersCompositeLayer extends CompositeLayer {
         id: 'marker-text-labels',
         data,
         pickable: true,
+        
         // Adjust position based on zoom level - closer to marker when highly zoomed in
         getPosition: d => {
           // At high zoom (≥12), place labels right next to markers
@@ -612,6 +616,7 @@ export default function createPhotoMarkersLayer({
     showLabels, // Pass through whether to show labels
     zoomLevel, // Pass the current zoom level
     pickable: true, // This is critical for click/touch events to work
+    pickingRadius: 100,
     autoHighlight: true, // Visual feedback on hover
     parameters: {
       depthTest: false // Ensure markers are shown on top of terrain
